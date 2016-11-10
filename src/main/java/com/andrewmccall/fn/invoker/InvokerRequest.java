@@ -27,39 +27,5 @@ public class InvokerRequest<T> {
         return context;
     }
 
-    public static class SerializedRequestContext implements RequestContext, Serializable {
-
-        private transient ExecutionContext executionContext;
-
-        private String requestId;
-        private Map<String, String> parameters;
-
-        @Override
-        public String getRequestId() {
-            return requestId;
-        }
-
-        @Override
-        public Map<String, String> getParameters() {
-            return parameters;
-        }
-
-        @Override
-        public ExecutionContext getExecutionContext() {
-            return executionContext;
-        }
-
-        public void setExecutionContext(ExecutionContext executionContext) {
-            this.executionContext = executionContext;
-        }
-
-        public void setRequestId(String requestId) {
-            this.requestId = requestId;
-        }
-
-        public void setParameters(Map<String, String> parameters) {
-            this.parameters = parameters;
-        }
-    }
 
 }

@@ -1,5 +1,8 @@
 package com.andrewmccall.fn.invoker;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.logging.log4j.LogManager;
@@ -24,18 +27,18 @@ public class TestHelloWorld {
     public void testHelloWorldFunction() {
 
 
-        Invoker<TestRequest, TestResponse> invoker = new Invoker<>(new HelloWorldFunction(), TestRequest.class, TestResponse.class);
+        Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>(new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, HelloWorldFunction.TestResponse.class);
 
         String key = "key";
         String value = "world!";
 
 
-        TestRequest request = new TestRequest();
+        HelloWorldFunction.TestRequest request = new HelloWorldFunction.TestRequest();
         request.setKey(key);
         request.setValue(value);
 
 
-        InvokerRequest<TestRequest> invokerRequest = new InvokerRequest<>(request, new InvokerRequest.SerializedRequestContext() {
+        InvokerRequest<HelloWorldFunction.TestRequest> invokerRequest = new InvokerRequest<>(request, new SerializedRequestContext() {
             {
                 this.setParameters(Collections.emptyMap());
                 this.setRequestId(UUID.randomUUID().toString());
@@ -43,7 +46,7 @@ public class TestHelloWorld {
 
         });
 
-        TestResponse response = invoker.execute(invokerRequest).getPayload();
+        HelloWorldFunction.TestResponse response = invoker.execute(invokerRequest).getPayload();
 
         assertEquals(request.getKey(), response.getKey());
         assertEquals("Hello " + request.getValue(), response.getValue());
@@ -55,13 +58,13 @@ public class TestHelloWorld {
     @Test
     public void testRemoteCall() throws InterruptedException, IOException {
 
-        Invoker<TestRequest, TestResponse> invoker = new Invoker<>(new HelloWorldFunction(), TestRequest.class, TestResponse.class);
+        Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>(new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, HelloWorldFunction.TestResponse.class);
 
         String key = "key";
         String value = "world!";
 
 
-        TestRequest request = new TestRequest();
+        HelloWorldFunction.TestRequest request = new HelloWorldFunction.TestRequest();
         request.setKey(key);
         request.setValue(value);
 
@@ -77,9 +80,10 @@ public class TestHelloWorld {
 
 
         OutputStream os = clientSocket.getOutputStream();
+        InputStream is = clientSocket.getInputStream();
 
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.writeValue(os, new InvokerRequest<>(request, new InvokerRequest.SerializedRequestContext() {
+        ObjectMapper mapper = new ObjectMapper(new JsonFactory().configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false));
+        mapper.writeValue(os, new InvokerRequest<>(request, new SerializedRequestContext() {
             {
                 this.setParameters(Collections.emptyMap());
                 this.setRequestId(UUID.randomUUID().toString());
@@ -88,9 +92,11 @@ public class TestHelloWorld {
         }));
 
         os.flush();
-        os.close();
+        InvokerResponse response = mapper.readValue(is, mapper.getTypeFactory().constructParametrizedType(InvokerResponse.class, InvokerResponse.class, request.getClass()));
 
-        //InvokerResponse response = mapper.readValue(clientSocket.getInputStream(), InvokerResponse.class);
+
+        log.info("Response from invoker was {}", response);
+
 
         clientSocket.close();
         invoker.shutdown();
@@ -99,56 +105,8 @@ public class TestHelloWorld {
 
 
 
-    public static class TestObject {
-        private String key;
-        private String value;
 
-        public String getKey() {
-            return key;
-        }
 
-        public void setKey(String key) {
-            this.key = key;
-        }
 
-        public String getValue() {
-            return value;
-        }
-
-        public void setValue(String value) {
-            this.value = value;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            TestObject that = (TestObject) o;
-
-            if (key != null ? !key.equals(that.key) : that.key != null) return false;
-            return value != null ? value.equals(that.value) : that.value == null;
-
-        }
-
-        @Override
-        public int hashCode() {
-            int result = key != null ? key.hashCode() : 0;
-            result = 31 * result + (value != null ? value.hashCode() : 0);
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            return "TestObject{" +
-                    "key='" + key + '\'' +
-                    ", value='" + value + '\'' +
-                    '}';
-        }
-    }
-
-    public static final class TestRequest extends TestObject {}
-
-    public static final class TestResponse extends TestObject {}
 
 }

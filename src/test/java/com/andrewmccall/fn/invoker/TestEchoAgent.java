@@ -15,7 +15,7 @@ public class TestEchoAgent {
         Invoker<String, String> echoInvoker = new Invoker<>(new EchoFunction(), String.class, String.class);
         String test = "Hello world!";
 
-        InvokerRequest<String> request = new InvokerRequest<>(test, new InvokerRequest.SerializedRequestContext() {
+        InvokerRequest<String> request = new InvokerRequest<>(test, new SerializedRequestContext() {
             {
                 this.setParameters(Collections.emptyMap());
                 this.setRequestId(UUID.randomUUID().toString());

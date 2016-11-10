@@ -1,14 +1,19 @@
 package com.andrewmccall.fn.invoker;
 
 import com.andrewmccall.fn.api.Function;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.util.concurrent.Future;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,6 +29,8 @@ import java.util.List;
 public class Invoker<I, O> {
 
     private static final Logger log = LogManager.getLogger(Invoker.class.getName());
+
+    private ObjectMapper mapper;
 
     private static final int ACCEPTOR_THREADS = 2;
     private static final int HANDLER_THREADS = 10;
@@ -43,6 +50,8 @@ public class Invoker<I, O> {
         this.in = in;
         this.out = out;
 
+        mapper = new ObjectMapper();
+
         Marker marker = MarkerManager.getMarker("STARTUP");
 
         log.info(marker, "Starting Invoker for function {} with in-class {} and out-class {}", function.getClass().getName(), in.getName(), out.getName());
@@ -51,7 +60,7 @@ public class Invoker<I, O> {
         b.group(acceptorGroup, handlerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(new InvokerSocketInitialiser())
-                .option(ChannelOption.SO_BACKLOG, 5)
+                .option(ChannelOption.SO_BACKLOG, 120)
                 .childOption(ChannelOption.SO_KEEPALIVE, true);
 
         try {
@@ -67,6 +76,7 @@ public class Invoker<I, O> {
     }
 
     public void shutdown() {
+        log.info("Shutting down.");
         Future af = acceptorGroup.shutdownGracefully();
         Future hf = handlerGroup.shutdownGracefully();
         af.awaitUninterruptibly();
@@ -94,8 +104,15 @@ public class Invoker<I, O> {
             super.channelRead(ctx, msg);
             InvokerRequest<I> request = (InvokerRequest<I>) msg;
             InvokerResponse<O> response = execute(request);
-
             log.debug("Function returned {}", response);
+
+            ctx.write(response);
+
+        }
+
+        @Override
+        public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+            ctx.flush();
         }
     }
 
@@ -113,9 +130,9 @@ public class Invoker<I, O> {
 
             ChannelPipeline pipeline = ch.pipeline();
 
-            pipeline.addLast(JsonDecoder.class.getName(), new JsonDecoder(in));
-
-            pipeline.addLast("requestHandler", new InvokerRequestHandler());
+            pipeline.addLast(   new JsonEncoder(),
+                                new JsonDecoder(in),
+                                new InvokerRequestHandler());
 
             log.trace("Configured.");
         }
@@ -123,7 +140,7 @@ public class Invoker<I, O> {
 
     public class JsonDecoder extends io.netty.handler.codec.ByteToMessageDecoder {
 
-        ObjectMapper mapper = new ObjectMapper();
+
 
         Class clazz;
 
@@ -137,6 +154,15 @@ public class Invoker<I, O> {
 
             ByteBufInputStream byteBufInputStream = new ByteBufInputStream(in);
             out.add(mapper.readValue(byteBufInputStream, mapper.getTypeFactory().constructParametrizedType(InvokerRequest.class, InvokerRequest.class, clazz)));
+        }
+    }
+
+    public class JsonEncoder extends MessageToByteEncoder {
+
+        @Override
+        protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf out) throws Exception {
+            ByteBufOutputStream os = new ByteBufOutputStream(out);
+            mapper.writeValue(os, msg);
         }
     }
 
