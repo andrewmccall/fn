@@ -29,4 +29,11 @@ public class InvokerResponse<T> {
         return context;
     }
 
+    @Override
+    public String toString() {
+        return "InvokerResponse{" +
+                "payload=" + payload +
+                ", context=" + context +
+                '}';
+    }
 }

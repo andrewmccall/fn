@@ -1,13 +1,8 @@
 package com.andrewmccall.fn.invoker;
 
-import com.amazonaws.Request;
-import com.andrewmccall.fn.api.ExecutionContext;
 import com.andrewmccall.fn.api.RequestContext;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.io.Serializable;
-import java.util.Map;
 
 public class InvokerRequest<T> {
 
@@ -27,5 +22,11 @@ public class InvokerRequest<T> {
         return context;
     }
 
-
+    @Override
+    public String toString() {
+        return "InvokerRequest{" +
+                "payload=" + payload +
+                ", context=" + context +
+                '}';
+    }
 }

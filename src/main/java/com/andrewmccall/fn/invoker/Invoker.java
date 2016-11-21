@@ -1,26 +1,25 @@
 package com.andrewmccall.fn.invoker;
 
 import com.andrewmccall.fn.api.Function;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.andrewmccall.fn.api.rpc.JsonDecoder;
+import com.andrewmccall.fn.api.rpc.JsonEncoder;
+import com.andrewmccall.fn.config.ClusterConfig;
+import com.andrewmccall.fn.discovery.LocalRegistry;
+import com.andrewmccall.fn.discovery.ServiceInstance;
+import com.andrewmccall.fn.discovery.ServiceRegistry;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.ByteBufOutputStream;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.util.concurrent.Future;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
-import java.util.List;
+import java.net.SocketException;
+import java.util.UUID;
 
 
 /**
@@ -29,8 +28,8 @@ import java.util.List;
 public class Invoker<I, O> {
 
     private static final Logger log = LogManager.getLogger(Invoker.class.getName());
-
-    private ObjectMapper mapper;
+    private static final Marker STARTUP = MarkerManager.getMarker("STARTUP");
+    private static final Marker SHUTDOWN = MarkerManager.getMarker("SHUTDOWN");
 
     private static final int ACCEPTOR_THREADS = 2;
     private static final int HANDLER_THREADS = 10;
@@ -41,20 +40,41 @@ public class Invoker<I, O> {
     private final Class<I> in;
     private final Class<O> out;
 
+    private final String functionId;
+    private final String instanceId;
+
     private transient NioEventLoopGroup acceptorGroup = new NioEventLoopGroup(ACCEPTOR_THREADS); // 2 threads
     private transient NioEventLoopGroup handlerGroup = new NioEventLoopGroup(HANDLER_THREADS); // 10 thread
 
-    public Invoker(Function<? super I, ? extends O> function, Class<I> in, Class<O> out) {
+    private transient ServiceRegistry registry;
+
+    public Invoker(String functionId, String instanceId, Function<? super I, ? extends O> function, Class<I> in, Class<O> out) {
+
+        this.functionId = functionId;
+        this.instanceId = instanceId;
 
         this.function = function;
         this.in = in;
         this.out = out;
 
-        mapper = new ObjectMapper();
+        log.info(STARTUP, "Starting Invoker for function {} with in-class {} and out-class {}", function.getClass().getName(), in.getName(), out.getName());
 
-        Marker marker = MarkerManager.getMarker("STARTUP");
+    }
 
-        log.info(marker, "Starting Invoker for function {} with in-class {} and out-class {}", function.getClass().getName(), in.getName(), out.getName());
+    public void startup() {
+
+        registry = ClusterConfig.getClusterConfig().getServiceRegistry();
+
+        ServiceInstance instance = registry.getServiceInstance(functionId, instanceId);
+
+        log.debug(STARTUP, "Found instance for self, {}", instance);
+
+        if (instance.getStatus() != ServiceInstance.Status.REQUESTED)  {
+            log.warn("Instance does not have the expected status..."); // do something?
+        }
+
+        instance.setStatus(ServiceInstance.Status.STARTING);
+        registry.register(new ServiceInstance());
 
         ServerBootstrap b = new ServerBootstrap();
         b.group(acceptorGroup, handlerGroup)
@@ -65,22 +85,51 @@ public class Invoker<I, O> {
 
         try {
             Future f = b.localAddress(PORT).bind().sync();
-            log.info("Waiting for Socket startup.");
+            log.info(STARTUP, "Waiting for Socket startup.");
             f.awaitUninterruptibly();
-        } catch (InterruptedException e) {
-            log.error(marker, "Failed to bind to port {}", PORT);
-        }
-        log.info(marker, "Started on port {}", PORT);
 
+            if (!f.isSuccess()) {
+                log.error(STARTUP, "Startup failed, socket not running.");
+                instance.setStatus(ServiceInstance.Status.STARTUP_FAILED);
+                registry.register(instance);
+                shutdown();
+                return;
+            }
+
+        } catch (InterruptedException e) {
+            log.error(STARTUP, "Failed to bind to port {}", PORT);
+        }
+        log.info(STARTUP, "Started on port {}", PORT);
+
+        instance.setPort(PORT);
+        // default to the first host.
+        try {
+            instance.setHost(ServiceRegistry.getFirstHost());
+        } catch (SocketException e) {
+            log.error(STARTUP, "Failed to start.", e);
+            shutdown();
+            return;
+        }
+
+        // once we've started, let's update our instance as available.
+        instance.setStatus(ServiceInstance.Status.RUNNING);
+        registry.register(instance);
 
     }
 
     public void shutdown() {
-        log.info("Shutting down.");
+
+        // Mark our instance as shutting down in the registry.
+
+        log.info(SHUTDOWN, "Shutting down.");
         Future af = acceptorGroup.shutdownGracefully();
         Future hf = handlerGroup.shutdownGracefully();
+        log.debug(SHUTDOWN, "Waiting for thread group shutdown.");
         af.awaitUninterruptibly();
         hf.awaitUninterruptibly();
+        log.info(SHUTDOWN, "Shutdown complete");
+
+        // Mark the instance as shutdown in the registry -- do we clean up here or keep it as a 'frozen' instance?
     }
 
     public InvokerResponse<O> execute(InvokerRequest<I> request) {
@@ -138,60 +187,33 @@ public class Invoker<I, O> {
         }
     }
 
-    public class JsonDecoder extends io.netty.handler.codec.ByteToMessageDecoder {
-
-
-
-        Class clazz;
-
-        public JsonDecoder(Class clazz) {
-            this.clazz = clazz;
-        }
-
-        @Override
-        protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-
-
-            ByteBufInputStream byteBufInputStream = new ByteBufInputStream(in);
-            out.add(mapper.readValue(byteBufInputStream, mapper.getTypeFactory().constructParametrizedType(InvokerRequest.class, InvokerRequest.class, clazz)));
-        }
-    }
-
-    public class JsonEncoder extends MessageToByteEncoder {
-
-        @Override
-        protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf out) throws Exception {
-            ByteBufOutputStream os = new ByteBufOutputStream(out);
-            mapper.writeValue(os, msg);
-        }
-    }
 
     private static Invoker i;
 
     public static void main(String[] args) {
+
+        String functionId = UUID.randomUUID().toString();
+        String instanceId = UUID.randomUUID().toString();
+
         String functionClassName = args[0];
         String requestClassName = args[1];
         String responseClassName = args[2];
-
-
-        Marker marker = MarkerManager.getMarker("STARTUP");
-
 
         Function function = null;
         try {
             function = (Function) Class.forName(functionClassName).newInstance();
         } catch (InstantiationException | IllegalAccessException e) {
-            log.fatal(marker, "Could not instantiate function class {} ", functionClassName, e);
+            log.fatal(STARTUP, "Could not instantiate function class {} ", functionClassName, e);
             System.exit(-1);
         } catch (ClassNotFoundException e) {
-            log.fatal(marker, "Could not find request class {} ", functionClassName, e);
+            log.fatal(STARTUP, "Could not find request class {} ", functionClassName, e);
             System.exit(-1);
         }
         Class requestClass = null;
         try {
             requestClass = Class.forName(requestClassName);
         } catch (ClassNotFoundException e) {
-            log.fatal(marker, "Could not find request class {} ", requestClassName);
+            log.fatal(STARTUP, "Could not find request class {} ", requestClassName);
             System.exit(-1);
         }
 
@@ -199,11 +221,12 @@ public class Invoker<I, O> {
         try {
             responseClass = Class.forName(responseClassName);
         } catch (ClassNotFoundException e) {
-            log.fatal(marker, "Could not find response class {} ", requestClassName);
+            log.fatal(STARTUP, "Could not find response class {} ", requestClassName);
             System.exit(-1);
         }
 
-        i = new Invoker(function, requestClass, responseClass);
+        i = new Invoker(functionId, instanceId, function, requestClass, responseClass);
+        i.startup();
 
         while (true) {
             try {

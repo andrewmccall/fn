@@ -1,9 +1,5 @@
 package com.andrewmccall.fn.invoker;
 
-/**
- * Created by andrewmccall on 10/11/2016.
- */
-
 import com.andrewmccall.fn.api.ExecutionContext;
 import com.andrewmccall.fn.api.RequestContext;
 
@@ -42,5 +38,15 @@ public class SerializedRequestContext implements RequestContext, Serializable {
 
     public void setParameters(Map<String, String> parameters) {
         this.parameters = parameters;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("SerializedRequestContext{");
+        sb.append("executionContext=").append(executionContext);
+        sb.append(", requestId='").append(requestId).append('\'');
+        sb.append(", parameters=").append(parameters);
+        sb.append('}');
+        return sb.toString();
     }
 }
