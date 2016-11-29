@@ -32,7 +32,6 @@ public interface RequestContext extends Serializable {
      * Returned the current ExectionContext for this function.
      * @return
      */
-    @JsonIgnore
     Optional<ExecutionContext> getExecutionContext();
 
 }

@@ -39,8 +39,9 @@ dependencies {
     compile ('org.apache.helix:helix-examples:0.7.1') {
     }
 
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.8.4'
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.8.4'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.8.5'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.8.5'
+    compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: '2.8.5'
 
     compile group: 'io.netty', name: 'netty-codec-http', version: '4.1.4.Final'
     compile group: 'io.netty', name: 'netty-handler', version: '4.1.4.Final'

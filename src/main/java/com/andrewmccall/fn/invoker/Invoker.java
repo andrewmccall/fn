@@ -2,12 +2,12 @@ package com.andrewmccall.fn.invoker;
 
 import com.andrewmccall.fn.api.Function;
 import com.andrewmccall.fn.api.ImmutableExecutionContext;
-import com.andrewmccall.fn.invoker.rpc.InvokerRequestCodec;
 import com.andrewmccall.fn.config.ConfigurationProvider;
 import com.andrewmccall.fn.config.LocalConfigurationProvider;
 import com.andrewmccall.fn.discovery.ServiceInstance;
 import com.andrewmccall.fn.discovery.ServiceRegistry;
-import com.andrewmccall.fn.invoker.rpc.InvokerResponseCodec;
+import com.andrewmccall.fn.invoker.rpc.InvokerRequestDecoder;
+import com.andrewmccall.fn.invoker.rpc.InvokerResponseEncoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -193,8 +193,8 @@ public class Invoker<I, O> {
 
             ChannelPipeline pipeline = ch.pipeline();
 
-            pipeline.addLast(   new InvokerResponseCodec<>(out),
-                                new InvokerRequestCodec<>(in),
+            pipeline.addLast(   new InvokerResponseEncoder<>(out),
+                                new InvokerRequestDecoder<>(in),
                                 new InvokerRequestHandler());
 
             log.trace("Configured.");

@@ -1,45 +1,39 @@
 package com.andrewmccall.fn.invoker.rpc;
 
+import com.andrewmccall.fn.invoker.InvokerRequest;
 import com.andrewmccall.fn.invoker.InvokerResponse;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.ByteBufOutputStream;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageCodec;
+import io.netty.handler.codec.ByteToMessageDecoder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.DataOutput;
 import java.io.InputStream;
 import java.util.List;
+
+import static com.andrewmccall.fn.invoker.rpc.JacksonRpc.getObjectMapper;
 
 /**
  * Created by andrewmccall on 29/11/2016.
  */
-public class InvokerResponseCodec<T> extends ByteToMessageCodec<InvokerResponse<T>> {
+public class InvokerResponseDecoder<T> extends ByteToMessageDecoder {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper(
-            new JsonFactory()
-            .configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)
-    );
 
-    private static final Logger log = LogManager.getLogger(InvokerResponseCodec.class);
+    private static final Logger log = LogManager.getLogger(InvokerResponseDecoder.class);
+
+    /**
+     * Gets the ObjectMapper from the synchronized method when the class is created so we don't enter the synchronized
+     * block for every call.
+     */
+    private static final ObjectMapper objectMapper = getObjectMapper();
 
     private JavaType parameterizedType;
 
-    public InvokerResponseCodec(Class<T> clazz) {
+    public InvokerResponseDecoder(Class<T> clazz) {
         parameterizedType = objectMapper.getTypeFactory().constructParametrizedType(InvokerResponse.class, InvokerResponse.class, clazz);
-    }
-
-
-    @Override
-    protected void encode(ChannelHandlerContext ctx, InvokerResponse<T> msg, ByteBuf out) throws Exception {
-        ByteBufOutputStream os = new ByteBufOutputStream(out);
-        objectMapper.writeValue((DataOutput) os, msg);
     }
 
     @Override
@@ -51,11 +45,12 @@ public class InvokerResponseCodec<T> extends ByteToMessageCodec<InvokerResponse<
 
         log.trace("{} bytes available", byteBufInputStream.available());
 
-        InvokerResponse<T> r = objectMapper.readValue((InputStream) byteBufInputStream, parameterizedType);
+        InvokerRequest<T> r = objectMapper.readValue((InputStream) byteBufInputStream, parameterizedType);
 
-        log.trace("Response {}", r);
+        log.trace("Request {}", r);
 
         out.add(r);
 
     }
+
 }
