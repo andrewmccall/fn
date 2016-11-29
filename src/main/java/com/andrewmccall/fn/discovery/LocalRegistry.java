@@ -1,7 +1,5 @@
 package com.andrewmccall.fn.discovery;
 
-import com.andrewmccall.fn.config.annotations.Module;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -10,7 +8,6 @@ import java.util.Map;
 /**
  * A local, in memory Registry.
  */
-@Module
 public class LocalRegistry implements ServiceRegistry {
 
     Map<String, Map<String, ServiceInstance>> leaseMap = new HashMap<>();
@@ -23,7 +20,7 @@ public class LocalRegistry implements ServiceRegistry {
     @Override
     public void register(ServiceInstance serviceInstance) {
 
-        if (leaseMap.containsKey(serviceInstance.getExecutionContext().getApplicationId())) {
+        if (!leaseMap.containsKey(serviceInstance.getExecutionContext().getApplicationId())) {
             leaseMap.put(serviceInstance.getExecutionContext().getApplicationId(), new HashMap<>());
         }
         leaseMap.get(serviceInstance.getExecutionContext().getApplicationId()).put(serviceInstance.getInstanceId(), serviceInstance);
@@ -44,7 +41,7 @@ public class LocalRegistry implements ServiceRegistry {
      */
     @Override
     public ServiceInstance getServiceInstance(String serviceId, String instanceId) {
-        if (leaseMap.containsKey(serviceId))
+        if (!leaseMap.containsKey(serviceId))
             return null;
         return leaseMap.get(serviceId).get(instanceId);
     }

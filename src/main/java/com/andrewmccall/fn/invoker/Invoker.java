@@ -1,12 +1,13 @@
 package com.andrewmccall.fn.invoker;
 
 import com.andrewmccall.fn.api.Function;
-import com.andrewmccall.fn.api.rpc.JsonDecoder;
-import com.andrewmccall.fn.api.rpc.JsonEncoder;
-import com.andrewmccall.fn.config.ClusterConfig;
-import com.andrewmccall.fn.discovery.LocalRegistry;
+import com.andrewmccall.fn.api.ImmutableExecutionContext;
+import com.andrewmccall.fn.invoker.rpc.InvokerRequestCodec;
+import com.andrewmccall.fn.config.ConfigurationProvider;
+import com.andrewmccall.fn.config.LocalConfigurationProvider;
 import com.andrewmccall.fn.discovery.ServiceInstance;
 import com.andrewmccall.fn.discovery.ServiceRegistry;
+import com.andrewmccall.fn.invoker.rpc.InvokerResponseCodec;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -46,9 +47,11 @@ public class Invoker<I, O> {
     private transient NioEventLoopGroup acceptorGroup = new NioEventLoopGroup(ACCEPTOR_THREADS); // 2 threads
     private transient NioEventLoopGroup handlerGroup = new NioEventLoopGroup(HANDLER_THREADS); // 10 thread
 
+    private final ConfigurationProvider configurationProvider;
+
     private transient ServiceRegistry registry;
 
-    public Invoker(String functionId, String instanceId, Function<? super I, ? extends O> function, Class<I> in, Class<O> out) {
+    public Invoker(String functionId, String instanceId, Function<? super I, ? extends O> function, Class<I> in, Class<O> out, ConfigurationProvider configurationProvider) {
 
         this.functionId = functionId;
         this.instanceId = instanceId;
@@ -57,24 +60,30 @@ public class Invoker<I, O> {
         this.in = in;
         this.out = out;
 
+        this.configurationProvider = configurationProvider;
+
         log.info(STARTUP, "Starting Invoker for function {} with in-class {} and out-class {}", function.getClass().getName(), in.getName(), out.getName());
 
     }
 
     public void startup() {
 
-        registry = ClusterConfig.getClusterConfig().getServiceRegistry();
+        registry = configurationProvider.getClusterConfig().getServiceRegistry();
 
         ServiceInstance instance = registry.getServiceInstance(functionId, instanceId);
 
         log.debug(STARTUP, "Found instance for self, {}", instance);
+
+        if (instance == null) {
+            instance = new ServiceInstance();
+        }
 
         if (instance.getStatus() != ServiceInstance.Status.REQUESTED)  {
             log.warn("Instance does not have the expected status..."); // do something?
         }
 
         instance.setStatus(ServiceInstance.Status.STARTING);
-        registry.register(new ServiceInstance());
+        registry.register(instance);
 
         ServerBootstrap b = new ServerBootstrap();
         b.group(acceptorGroup, handlerGroup)
@@ -133,7 +142,10 @@ public class Invoker<I, O> {
     }
 
     public InvokerResponse<O> execute(InvokerRequest<I> request) {
-        return new InvokerResponse<>(function.execute(request.getPayload(), request.getContext()), request.getContext());
+        log.debug("Calling function with payload {}");
+        InvokerResponse<O> response = new InvokerResponse<>(function.execute(request.getPayload(), request.getContext()), request.getContext());
+        log.debug("Returning {}");
+        return response;
     }
 
     class InvokerRequestHandler extends ChannelInboundHandlerAdapter {
@@ -147,6 +159,8 @@ public class Invoker<I, O> {
 
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+
+            if (! (msg instanceof InvokerRequest)) return;
 
             log.debug("Got message type: {} value: [{}]", msg);
 
@@ -179,8 +193,8 @@ public class Invoker<I, O> {
 
             ChannelPipeline pipeline = ch.pipeline();
 
-            pipeline.addLast(   new JsonEncoder(),
-                                new JsonDecoder(in),
+            pipeline.addLast(   new InvokerResponseCodec<>(out),
+                                new InvokerRequestCodec<>(in),
                                 new InvokerRequestHandler());
 
             log.trace("Configured.");
@@ -198,6 +212,18 @@ public class Invoker<I, O> {
         String functionClassName = args[0];
         String requestClassName = args[1];
         String responseClassName = args[2];
+
+        ConfigurationProvider configurationProvider = new LocalConfigurationProvider();
+
+        ServiceRegistry registry = configurationProvider.getClusterConfig().getServiceRegistry();
+        ServiceInstance instance = new ServiceInstance();
+        instance.setInstanceId(UUID.randomUUID().toString());
+
+        ImmutableExecutionContext ctx = ImmutableExecutionContext.builder().applicationId(functionId).functionVersion("1").build();
+        instance.setExecutionContext(ctx);
+        instance.setStatus(ServiceInstance.Status.REQUESTED);
+        registry.register(instance);
+
 
         Function function = null;
         try {
@@ -225,7 +251,7 @@ public class Invoker<I, O> {
             System.exit(-1);
         }
 
-        i = new Invoker(functionId, instanceId, function, requestClass, responseClass);
+        i = new Invoker(functionId, instanceId, function, requestClass, responseClass, configurationProvider);
         i.startup();
 
         while (true) {

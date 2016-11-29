@@ -1,11 +1,15 @@
 package com.andrewmccall.fn.invoker;
 
-import com.andrewmccall.fn.api.rpc.JsonCodec;
+import com.andrewmccall.fn.api.ImmutableExecutionContext;
+import com.andrewmccall.fn.api.ImmutableRequestContext;
+import com.andrewmccall.fn.config.ConfigurationProvider;
+import com.andrewmccall.fn.config.LocalConfigurationProvider;
+
+import com.andrewmccall.fn.discovery.ServiceInstance;
+import com.andrewmccall.fn.discovery.ServiceRegistry;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Test;
@@ -18,38 +22,38 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static junit.framework.TestCase.assertEquals;
 
 /**
  * Created by andrewmccall on 24/10/2016.
  */
-public class TestHelloWorld implements JsonCodec {
+public class TestHelloWorld  {
 
     private static final Logger log = LogManager.getLogger(TestHelloWorld.class);
+
+
+    private ObjectMapper objectMapper = new ObjectMapper(new JsonFactory().configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false));
+
+    private ConfigurationProvider configurationProvider = new LocalConfigurationProvider();
 
     @Test
     public void testHelloWorldFunction() {
 
 
-        Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>(new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, HelloWorldFunction.TestResponse.class);
+        Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>("hello-world", "testHelloWorldFunction", new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, HelloWorldFunction.TestResponse.class, configurationProvider);
 
         String key = "key";
         String value = "world!";
 
 
-        HelloWorldFunction.TestRequest request = new HelloWorldFunction.TestRequest();
+        HelloWorldFunction.TestRequest request = new HelloWorldFunction.TestRequest(key, value);
         request.setKey(key);
         request.setValue(value);
 
 
-        InvokerRequest<HelloWorldFunction.TestRequest> invokerRequest = new InvokerRequest<>(request, new SerializedRequestContext() {
-            {
-                this.setParameters(Collections.emptyMap());
-                this.setRequestId(UUID.randomUUID().toString());
-            }
-
-        });
+        InvokerRequest<HelloWorldFunction.TestRequest> invokerRequest = new InvokerRequest<>(request, ImmutableRequestContext.builder().requestId(UUID.randomUUID().toString()).parameters(Collections.emptyMap()).build());
 
         HelloWorldFunction.TestResponse response = invoker.execute(invokerRequest).getPayload();
 
@@ -63,15 +67,25 @@ public class TestHelloWorld implements JsonCodec {
     @Test
     public void testRemoteCall() throws InterruptedException, IOException {
 
-        Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>(new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, HelloWorldFunction.TestResponse.class);
+        // Register the instance we're about to start.
+        ServiceRegistry registry = configurationProvider.getClusterConfig().getServiceRegistry();
+
+        ServiceInstance instance = new ServiceInstance();
+        ImmutableExecutionContext ctx = ImmutableExecutionContext.builder().applicationId("hello-world").functionVersion("1").build();
+        instance.setExecutionContext(ctx);
+        instance.setInstanceId("testRemoteCall");
+        instance.setStatus(ServiceInstance.Status.REQUESTED);
+
+        registry.register(instance);
+
+        Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>("hello-world", "testRemoteCall", new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, HelloWorldFunction.TestResponse.class, configurationProvider);
+        invoker.startup();
 
         String key = "key";
         String value = "world!";
 
 
-        HelloWorldFunction.TestRequest request = new HelloWorldFunction.TestRequest();
-        request.setKey(key);
-        request.setValue(value);
+        HelloWorldFunction.TestRequest request = new HelloWorldFunction.TestRequest(key, value);
 
         Socket clientSocket = new Socket("localhost", 9999);
 
@@ -83,16 +97,14 @@ public class TestHelloWorld implements JsonCodec {
         InputStream is = clientSocket.getInputStream();
 
 
-        getObjectMapper().writeValue(os, new InvokerRequest<>(request, new SerializedRequestContext() {
-            {
-                this.setParameters(Collections.emptyMap());
-                this.setRequestId(UUID.randomUUID().toString());
-            }
+        InvokerRequest<HelloWorldFunction.TestRequest> invokerRequest = new InvokerRequest<>(request, ImmutableRequestContext.builder().requestId(UUID.randomUUID().toString()).parameters(Collections.emptyMap()).build());
 
-        }));
+        objectMapper.writeValue(os, invokerRequest);
 
+        log.trace("Sent request, calling flush.");
         os.flush();
-        InvokerResponse response = getObjectMapper().readValue(is, getObjectMapper().getTypeFactory().constructParametrizedType(InvokerResponse.class, InvokerResponse.class, request.getClass()));
+
+        InvokerResponse response = objectMapper.readValue(is, objectMapper.getTypeFactory().constructParametrizedType(InvokerResponse.class, InvokerResponse.class, request.getClass()));
 
 
         log.info("Response from invoker was {}", response);
@@ -106,24 +118,29 @@ public class TestHelloWorld implements JsonCodec {
     @Test
     public void testRemoteSpeed() throws InterruptedException, IOException {
 
-        Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>(new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, HelloWorldFunction.TestResponse.class);
+        Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>("hello-world", "testRemoteSpeed", new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, HelloWorldFunction.TestResponse.class, configurationProvider);
 
 
         int threads = 10;
-        int loops = 1000000;
-        int loopsDone = loops;
+        final int loops = 1000000;
 
+        final AtomicInteger loopsDone = new AtomicInteger();
+
+        final long start = System.currentTimeMillis();
 
         String key = "key";
         String value = "world!";
 
         ExecutorService pool = Executors.newFixedThreadPool(threads + 1);
 
-        BlockingQueue<HelloWorldFunction.TestRequest> queue = new ArrayBlockingQueue<>();
+        BlockingQueue<HelloWorldFunction.TestRequest> queue = new ArrayBlockingQueue<>(loops);
         pool.submit(() -> {
-           for (;loopsDone > 0; loopsDone--)  {
 
+           for (int i = loops;i > 0; i--)  {
+               queue.add(new HelloWorldFunction.TestRequest(key, value));
+               loopsDone.decrementAndGet();
            }
+
         });
 
         for (int i = 0; i < threads; i++) {
@@ -134,13 +151,7 @@ public class TestHelloWorld implements JsonCodec {
                     OutputStream os = clientSocket.getOutputStream();
 
                     while (true) {
-                        getObjectMapper().writeValue(os, new InvokerRequest<>(queue.poll(), new SerializedRequestContext() {
-                            {
-                                this.setParameters(Collections.emptyMap());
-                                this.setRequestId(UUID.randomUUID().toString());
-                            }
-
-                        }));
+                        objectMapper.writeValue(os, new InvokerRequest<>(queue.poll(), ImmutableRequestContext.builder().requestId(UUID.randomUUID().toString()).parameters(Collections.emptyMap()).build()));
                         os.flush();
                     }
 
@@ -151,26 +162,14 @@ public class TestHelloWorld implements JsonCodec {
             });
         }
 
-        while (loopsDone > 0 && !queue.isEmpty()) {
+        while (loopsDone.get() > 0 && !queue.isEmpty()) {
             Thread.sleep(200);
             System.out.println(loopsDone + " remain, queue depth " + queue.size());
         }
 
+        long time = start - System.currentTimeMillis();
+
         System.out.println("Processed " + loops + " in " + time + "ms");
-
-    }
-
-    private void executeRandomRequest(OutputStream os) {
-
-
-
-
-        try {
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
 
     }
 

@@ -74,7 +74,17 @@ public class HelloWorldFunction implements Function<HelloWorldFunction.TestReque
         }
     }
 
-    public static final class TestRequest extends TestObject {}
+    public static final class TestRequest extends TestObject {
+
+        public TestRequest() {
+
+        }
+
+        public TestRequest(String key, String value) {
+            this.setKey(key);
+            this.setValue(value);
+        }
+    }
 
     public static final class TestResponse extends TestObject {}
 

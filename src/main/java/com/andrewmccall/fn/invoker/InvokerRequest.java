@@ -10,7 +10,7 @@ public class InvokerRequest<T> {
     private RequestContext context;
 
     @JsonCreator
-    public InvokerRequest(@JsonProperty("payload") T result, @JsonProperty("context") SerializedRequestContext context) {
+    public InvokerRequest(@JsonProperty("payload") T result, @JsonProperty("context") RequestContext context) {
         this.payload = result;
         this.context = context;
     }

@@ -11,12 +11,7 @@ public class InvokerResponse<T> {
     private RequestContext context;
 
     @JsonCreator
-    public InvokerResponse(@JsonProperty("payload") T result, @JsonProperty("context") SerializedRequestContext context) {
-        this.payload = result;
-        this.context = context;
-    }
-
-    public InvokerResponse (T result, RequestContext context) {
+    public InvokerResponse(@JsonProperty("payload") T result, @JsonProperty("context") RequestContext context) {
         this.payload = result;
         this.context = context;
     }

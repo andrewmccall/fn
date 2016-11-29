@@ -7,6 +7,7 @@ import org.immutables.value.Value;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * The RequestContext holds additional context information surrouding a request.
@@ -32,6 +33,6 @@ public interface RequestContext extends Serializable {
      * @return
      */
     @JsonIgnore
-    ExecutionContext getExecutionContext();
+    Optional<ExecutionContext> getExecutionContext();
 
 }
