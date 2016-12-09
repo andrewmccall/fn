@@ -6,8 +6,11 @@
         </Console>
     </Appenders>
     <Loggers>
-        <Root level="TRACE">
+        <Root level="WARN">
             <AppenderRef ref="Console"/>
         </Root>
+        <Logger name="com.andrewmccall" level="trace" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
     </Loggers>
 </Configuration>
