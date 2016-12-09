@@ -4,3 +4,10 @@ jdk:
 notifications:
   slack:
     secure: Y+XCEE+ENCHhKupqCfOCxA0JQ/ygye9pHcdb2SlN/lFScCh9MjTjmoAeeqeLRwUW95s63IaR8AApsNJT6uFaOeLoTAPVQibL7qHZG4sVkb9qAvM+TDl1GuK07eRSV8CR/5JWY864/w9WCfQaPs+Ng2zf6IHwY6WCBGBK9gvFw1lIBTRYPFo7vkiexag6HXEFIDV4zZMqbrRl4TKfX0UA2D1EOaRoqxlF8AY/op40eh1WcM6/9//YsVICf0xQIdgiekt4wT5nygSz5PUN4VhmE6BTzR48Chdp0sqmVIeSPPEB9clbXXZ8X9WjzT3upQnYeh0cZwd2hb0p0daj0ImzAQrMFKVJEklRf5TFeHzDwmNuYrgprt+co2WsuwNfTJVwPl5RzkSRBDsNmApQktEnnySwI2mmAFkCKFYCF2YdnQCYtkF/kaojJg1qq+h6LD7ovKPnMTCExcsokRD+wIBRd8HPU9J6NztE4GkcxCdd0QRRuqgMhld8f75pJH2tbjlqdXYZmco2i8wH64tokJIoI2mnPfC7ZCY1rRQoq/BLZoNY+6hB8X00qSVm1v64Pas/Z/h8NJcI4taKbtTjfaqC2+i5eZGwdz8ht7jlhWG9bfWvEX4N4fAgLvaEewy2Jmj2nV5pU9zAV1p/ZWfAltGTH0kmerz23pZTh8YauKz42kE=
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
