@@ -10,7 +10,9 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.util.List;
 
 import static com.andrewmccall.fn.invoker.rpc.JacksonRpc.getObjectMapper;
@@ -44,11 +46,25 @@ public class InvokerRequestDecoder<T> extends ByteToMessageDecoder {
 
         log.trace("{} bytes available", byteBufInputStream.available());
 
-        InvokerRequest<T> r = objectMapper.readValue((InputStream) byteBufInputStream, parameterizedType);
+        try {
+            InvokerRequest<T> r = objectMapper.readValue((InputStream) byteBufInputStream, parameterizedType);
+            log.trace("Request {}", r);
 
-        log.trace("Request {}", r);
+            out.add(r);
 
-        out.add(r);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+
+            ByteArrayOutputStream result = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int length;
+            byteBufInputStream.reset();
+            while ((length = byteBufInputStream.read(buffer)) != -1) {
+                result.write(buffer, 0, length);
+            }
+
+            log.error("Failed to process message: {}", result.toString("UTF-8"), e);
+        }
+
 
     }
 

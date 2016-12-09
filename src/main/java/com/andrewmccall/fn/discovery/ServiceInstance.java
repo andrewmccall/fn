@@ -83,4 +83,17 @@ public class ServiceInstance {
     public void setStatus(Status status) {
         this.status = status;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ServiceInstance{");
+        sb.append("instanceId='").append(instanceId).append('\'');
+        sb.append(", host='").append(host).append('\'');
+        sb.append(", port=").append(port);
+        sb.append(", registrationDate=").append(registrationDate);
+        sb.append(", executionContext=").append(executionContext);
+        sb.append(", status=").append(status);
+        sb.append('}');
+        return sb.toString();
+    }
 }

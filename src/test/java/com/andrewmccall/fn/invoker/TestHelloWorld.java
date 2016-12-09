@@ -10,6 +10,7 @@ import com.andrewmccall.fn.discovery.ServiceRegistry;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Test;
@@ -34,7 +35,7 @@ public class TestHelloWorld  {
     private static final Logger log = LogManager.getLogger(TestHelloWorld.class);
 
 
-    private ObjectMapper objectMapper = new ObjectMapper(new JsonFactory().configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false));
+    private ObjectMapper objectMapper = new ObjectMapper(new JsonFactory().configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false)).registerModule(new Jdk8Module());
 
     private ConfigurationProvider configurationProvider = new LocalConfigurationProvider();
 

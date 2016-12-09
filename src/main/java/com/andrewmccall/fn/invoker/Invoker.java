@@ -78,7 +78,7 @@ public class Invoker<I, O> {
             instance = new ServiceInstance();
         }
 
-        if (instance.getStatus() != ServiceInstance.Status.REQUESTED)  {
+        if (instance.getStatus() != ServiceInstance.Status.REQUESTED) {
             log.warn("Instance does not have the expected status..."); // do something?
         }
 
@@ -124,6 +124,8 @@ public class Invoker<I, O> {
         instance.setStatus(ServiceInstance.Status.RUNNING);
         registry.register(instance);
 
+        log.debug("Registered self as {}", instance);
+
     }
 
     public void shutdown() {
@@ -144,7 +146,7 @@ public class Invoker<I, O> {
     public InvokerResponse<O> execute(InvokerRequest<I> request) {
         log.debug("Calling function with payload {}");
         InvokerResponse<O> response = new InvokerResponse<>(function.execute(request.getPayload(), request.getContext()), request.getContext());
-        log.debug("Returning {}");
+        log.debug("Returning {}", response);
         return response;
     }
 
@@ -160,7 +162,7 @@ public class Invoker<I, O> {
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 
-            if (! (msg instanceof InvokerRequest)) return;
+            if (!(msg instanceof InvokerRequest)) return;
 
             log.debug("Got message type: {} value: [{}]", msg);
 
@@ -169,7 +171,7 @@ public class Invoker<I, O> {
             InvokerResponse<O> response = execute(request);
             log.debug("Function returned {}", response);
 
-            ctx.write(response);
+            ctx.writeAndFlush(response);
 
         }
 
@@ -193,9 +195,10 @@ public class Invoker<I, O> {
 
             ChannelPipeline pipeline = ch.pipeline();
 
-            pipeline.addLast(   new InvokerResponseEncoder<>(out),
-                                new InvokerRequestDecoder<>(in),
-                                new InvokerRequestHandler());
+            pipeline.addLast(
+                    new InvokerResponseEncoder<>(out),
+                    new InvokerRequestDecoder<>(in),
+                    new InvokerRequestHandler());
 
             log.trace("Configured.");
         }
