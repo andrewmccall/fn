@@ -1,6 +1,5 @@
 package com.andrewmccall.fn.invoker.rpc;
 
-import com.andrewmccall.fn.invoker.InvokerRequest;
 import com.andrewmccall.fn.invoker.InvokerResponse;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,7 +12,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.DataOutput;
 
-import static com.andrewmccall.fn.invoker.rpc.JacksonRpc.getObjectMapper;
+import static com.andrewmccall.fn.json.JacksonConfig.getObjectMapper;
 
 /**
  * Created by andrewmccall on 29/11/2016.

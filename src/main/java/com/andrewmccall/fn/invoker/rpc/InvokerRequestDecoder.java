@@ -7,15 +7,14 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.util.CharsetUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.util.List;
 
-import static com.andrewmccall.fn.invoker.rpc.JacksonRpc.getObjectMapper;
+import static com.andrewmccall.fn.json.JacksonConfig.getObjectMapper;
 
 /**
  * Created by andrewmccall on 29/11/2016.
@@ -54,15 +53,8 @@ public class InvokerRequestDecoder<T> extends ByteToMessageDecoder {
 
         } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
 
-            ByteArrayOutputStream result = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024];
-            int length;
-            byteBufInputStream.reset();
-            while ((length = byteBufInputStream.read(buffer)) != -1) {
-                result.write(buffer, 0, length);
-            }
-
-            log.error("Failed to process message: {}", result.toString("UTF-8"), e);
+            in.resetReaderIndex();
+            log.error("Failed to process message: {}", in.toString(CharsetUtil.UTF_8), e);
         }
 
 

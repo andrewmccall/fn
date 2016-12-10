@@ -43,7 +43,7 @@ public class TestHelloWorld  {
     public void testHelloWorldFunction() {
 
 
-        Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>("hello-world", "testHelloWorldFunction", new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, HelloWorldFunction.TestResponse.class, configurationProvider);
+        InvokerRequestHandler<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new InvokerRequestHandler<>(new HelloWorldFunction());
 
         String key = "key";
         String value = "world!";
@@ -60,8 +60,6 @@ public class TestHelloWorld  {
 
         assertEquals(request.getKey(), response.getKey());
         assertEquals("Hello " + request.getValue(), response.getValue());
-
-        invoker.shutdown();
 
     }
 
@@ -80,7 +78,7 @@ public class TestHelloWorld  {
         registry.register(instance);
 
         Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>("hello-world", "testRemoteCall", new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, HelloWorldFunction.TestResponse.class, configurationProvider);
-        invoker.startup();
+        invoker.start();
 
         String key = "key";
         String value = "world!";
@@ -112,7 +110,7 @@ public class TestHelloWorld  {
 
 
         clientSocket.close();
-        invoker.shutdown();
+        invoker.stop();
 
     }
 

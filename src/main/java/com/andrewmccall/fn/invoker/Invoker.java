@@ -1,17 +1,16 @@
 package com.andrewmccall.fn.invoker;
 
+import com.andrewmccall.fn.Lifecycle;
+import com.andrewmccall.fn.ServerLifecycle;
 import com.andrewmccall.fn.api.Function;
 import com.andrewmccall.fn.api.ImmutableExecutionContext;
 import com.andrewmccall.fn.config.ConfigurationProvider;
 import com.andrewmccall.fn.config.LocalConfigurationProvider;
 import com.andrewmccall.fn.discovery.ServiceInstance;
 import com.andrewmccall.fn.discovery.ServiceRegistry;
-import com.andrewmccall.fn.invoker.rpc.InvokerRequestDecoder;
-import com.andrewmccall.fn.invoker.rpc.InvokerResponseEncoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.concurrent.Future;
 import org.apache.logging.log4j.LogManager;
@@ -26,14 +25,12 @@ import java.util.UUID;
 /**
  * An Invoker executes a function with a given input and output type.
  */
-public class Invoker<I, O> {
+public class Invoker<I, O> extends ServerLifecycle {
 
     private static final Logger log = LogManager.getLogger(Invoker.class.getName());
     private static final Marker STARTUP = MarkerManager.getMarker("STARTUP");
     private static final Marker SHUTDOWN = MarkerManager.getMarker("SHUTDOWN");
 
-    private static final int ACCEPTOR_THREADS = 2;
-    private static final int HANDLER_THREADS = 10;
     private static final int PORT = 9999;
 
     private final Function<? super I, ? extends O> function;
@@ -43,9 +40,6 @@ public class Invoker<I, O> {
 
     private final String functionId;
     private final String instanceId;
-
-    private transient NioEventLoopGroup acceptorGroup = new NioEventLoopGroup(ACCEPTOR_THREADS); // 2 threads
-    private transient NioEventLoopGroup handlerGroup = new NioEventLoopGroup(HANDLER_THREADS); // 10 thread
 
     private final ConfigurationProvider configurationProvider;
 
@@ -62,11 +56,22 @@ public class Invoker<I, O> {
 
         this.configurationProvider = configurationProvider;
 
-        log.info(STARTUP, "Starting Invoker for function {} with in-class {} and out-class {}", function.getClass().getName(), in.getName(), out.getName());
+        log.info(STARTUP, "Created Invoker for function {} with in-class {} and out-class {}", function.getClass().getName(), in.getName(), out.getName());
 
     }
 
-    public void startup() {
+    @Override
+    protected ServerBootstrap getServerBootstrap() {
+        ServerBootstrap b = new ServerBootstrap();
+        b.group(getAcceptorGroup(), getHandlerGroup())
+                .channel(NioServerSocketChannel.class)
+                .childHandler(new InvokerSocketInitializer<>(function, in, out))
+                .option(ChannelOption.SO_BACKLOG, 120)
+                .childOption(ChannelOption.SO_KEEPALIVE, true);
+        return b;
+    }
+
+    public void start() {
 
         registry = configurationProvider.getClusterConfig().getServiceRegistry();
 
@@ -85,23 +90,18 @@ public class Invoker<I, O> {
         instance.setStatus(ServiceInstance.Status.STARTING);
         registry.register(instance);
 
-        ServerBootstrap b = new ServerBootstrap();
-        b.group(acceptorGroup, handlerGroup)
-                .channel(NioServerSocketChannel.class)
-                .childHandler(new InvokerSocketInitialiser())
-                .option(ChannelOption.SO_BACKLOG, 120)
-                .childOption(ChannelOption.SO_KEEPALIVE, true);
+
 
         try {
-            Future f = b.localAddress(PORT).bind().sync();
-            log.info(STARTUP, "Waiting for Socket startup.");
+            Future f = startServer(PORT);
+            log.info(STARTUP, "Waiting for Socket start.");
             f.awaitUninterruptibly();
 
             if (!f.isSuccess()) {
                 log.error(STARTUP, "Startup failed, socket not running.");
                 instance.setStatus(ServiceInstance.Status.STARTUP_FAILED);
                 registry.register(instance);
-                shutdown();
+                stop();
                 return;
             }
 
@@ -116,7 +116,7 @@ public class Invoker<I, O> {
             instance.setHost(ServiceRegistry.getFirstHost());
         } catch (SocketException e) {
             log.error(STARTUP, "Failed to start.", e);
-            shutdown();
+            stop();
             return;
         }
 
@@ -127,83 +127,6 @@ public class Invoker<I, O> {
         log.debug("Registered self as {}", instance);
 
     }
-
-    public void shutdown() {
-
-        // Mark our instance as shutting down in the registry.
-
-        log.info(SHUTDOWN, "Shutting down.");
-        Future af = acceptorGroup.shutdownGracefully();
-        Future hf = handlerGroup.shutdownGracefully();
-        log.debug(SHUTDOWN, "Waiting for thread group shutdown.");
-        af.awaitUninterruptibly();
-        hf.awaitUninterruptibly();
-        log.info(SHUTDOWN, "Shutdown complete");
-
-        // Mark the instance as shutdown in the registry -- do we clean up here or keep it as a 'frozen' instance?
-    }
-
-    public InvokerResponse<O> execute(InvokerRequest<I> request) {
-        log.debug("Calling function with payload {}");
-        InvokerResponse<O> response = new InvokerResponse<>(function.execute(request.getPayload(), request.getContext()), request.getContext());
-        log.debug("Returning {}", response);
-        return response;
-    }
-
-    class InvokerRequestHandler extends ChannelInboundHandlerAdapter {
-
-        @Override
-        public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-
-            log.info("Registered...{}", ctx.channel().id());
-            super.channelRegistered(ctx);
-        }
-
-        @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-
-            if (!(msg instanceof InvokerRequest)) return;
-
-            log.debug("Got message type: {} value: [{}]", msg);
-
-            super.channelRead(ctx, msg);
-            InvokerRequest<I> request = (InvokerRequest<I>) msg;
-            InvokerResponse<O> response = execute(request);
-            log.debug("Function returned {}", response);
-
-            ctx.writeAndFlush(response);
-
-        }
-
-        @Override
-        public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-            ctx.flush();
-        }
-    }
-
-    /**
-     * Performs the initial set up of sockets as they connect to Netty.
-     * Registers the pipeline of handlers that received messages are passed through
-     */
-    public class InvokerSocketInitialiser extends ChannelInitializer<SocketChannel> {
-
-        @Override
-        public void initChannel(SocketChannel ch) throws Exception {
-
-
-            log.trace("Initializing channel {}:{}", ch.localAddress().getAddress(), ch.localAddress().getPort());
-
-            ChannelPipeline pipeline = ch.pipeline();
-
-            pipeline.addLast(
-                    new InvokerResponseEncoder<>(out),
-                    new InvokerRequestDecoder<>(in),
-                    new InvokerRequestHandler());
-
-            log.trace("Configured.");
-        }
-    }
-
 
     private static Invoker i;
 
@@ -255,7 +178,7 @@ public class Invoker<I, O> {
         }
 
         i = new Invoker(functionId, instanceId, function, requestClass, responseClass, configurationProvider);
-        i.startup();
+        i.start();
 
         while (true) {
             try {

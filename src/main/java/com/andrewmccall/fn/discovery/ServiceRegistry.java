@@ -8,9 +8,8 @@ import org.apache.helix.api.Cluster;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -24,6 +23,26 @@ public interface ServiceRegistry {
      * @param serviceInstance the ServiceInstance to register
      */
     void register(ServiceInstance serviceInstance);
+
+    /**
+     * Gets a ServiceInstance implementations are free to determine which instance to send. The default implmentation
+     * send a random instance.
+     *
+     * @param serviceId
+     * @return
+     */
+    default ServiceInstance getServiceInstance(String serviceId) {
+        Collection<ServiceInstance> instances = getServiceInstances(serviceId);
+        if (instances.isEmpty()) return null;
+        if (instances.size() == 1) return instances.iterator().next();
+        int index = ThreadLocalRandom.current().nextInt(instances.size());
+        Iterator<ServiceInstance> it = instances.iterator();
+        for (int i = 0 ; i <= index; i ++) {
+            if (i == index) return it.next();
+            it.next();
+        }
+        return null;
+    }
 
     /**
      * Gets a Collection of Leases for a serviceId.
