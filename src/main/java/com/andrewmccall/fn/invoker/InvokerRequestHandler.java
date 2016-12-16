@@ -20,7 +20,7 @@ public class InvokerRequestHandler<I, O>  extends ChannelInboundHandlerAdapter {
     }
 
     public InvokerResponse<O> execute(InvokerRequest<I> request) {
-        log.debug("Calling function with payload {}");
+        log.debug("Calling function with payload {}", request);
         InvokerResponse<O> response = new InvokerResponse<>(function.execute(request.getPayload(), request.getContext()), request.getContext());
         log.debug("Returning {}", response);
         return response;
@@ -46,6 +46,7 @@ public class InvokerRequestHandler<I, O>  extends ChannelInboundHandlerAdapter {
         log.debug("Function returned {}", response);
 
         ctx.writeAndFlush(response);
+
 
     }
 

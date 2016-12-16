@@ -39,24 +39,22 @@ public class InvokerRequestDecoder<T> extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
 
-        log.trace("Decoding... ");
+        log.trace("Decoding... at pos {}", in.readerIndex());
 
         ByteBufInputStream byteBufInputStream = new ByteBufInputStream(in);
 
         log.trace("{} bytes available", byteBufInputStream.available());
 
         try {
-            InvokerRequest<T> r = objectMapper.readValue((InputStream) byteBufInputStream, parameterizedType);
-            log.trace("Request {}", r);
+            while (in.isReadable()) {
+                InvokerRequest<T> r = objectMapper.readValue((InputStream) byteBufInputStream, parameterizedType);
+                log.trace("Request {}", r);
 
-            out.add(r);
-
+                out.add(r);
+            }
         } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-
-            in.resetReaderIndex();
             log.error("Failed to process message: {}", in.toString(CharsetUtil.UTF_8), e);
         }
-
 
     }
 

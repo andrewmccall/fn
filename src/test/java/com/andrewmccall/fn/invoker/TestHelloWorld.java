@@ -115,15 +115,110 @@ public class TestHelloWorld  {
     }
 
     @Test
+    public void testMultipleRemoteCalls() throws InterruptedException, IOException {
+
+        // Register the instance we're about to start.
+        ServiceRegistry registry = configurationProvider.getClusterConfig().getServiceRegistry();
+
+        ServiceInstance instance = new ServiceInstance();
+        ImmutableExecutionContext ctx = ImmutableExecutionContext.builder().applicationId("hello-world").functionVersion("1").build();
+        instance.setExecutionContext(ctx);
+        instance.setInstanceId("testRemoteCall");
+        instance.setStatus(ServiceInstance.Status.REQUESTED);
+
+        registry.register(instance);
+
+        Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>("hello-world", "testRemoteCall", new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, HelloWorldFunction.TestResponse.class, configurationProvider);
+        invoker.start();
+
+        String key = "key";
+        String value = "world!";
+
+
+        HelloWorldFunction.TestRequest request = new HelloWorldFunction.TestRequest(key, value);
+
+        Socket clientSocket = new Socket("localhost", 9999);
+
+
+        log.debug("Socket connected: {}", clientSocket.isConnected());
+
+
+        OutputStream os = clientSocket.getOutputStream();
+        InputStream is = clientSocket.getInputStream();
+
+
+        InvokerRequest<HelloWorldFunction.TestRequest> invokerRequest = new InvokerRequest<>(request, ImmutableRequestContext.builder().requestId(UUID.randomUUID().toString()).parameters(Collections.emptyMap()).build());
+
+        objectMapper.writeValue(os, invokerRequest);
+
+        log.trace("Sent request, calling flush.");
+        os.flush();
+
+        objectMapper.writeValue(os, invokerRequest);
+
+        log.trace("Sent request, calling flush.");
+        os.flush();
+
+        objectMapper.writeValue(os, invokerRequest);
+
+        log.trace("Sent request, calling flush.");
+        os.flush();
+
+        objectMapper.writeValue(os, invokerRequest);
+
+        log.trace("Sent request, calling flush.");
+        os.flush();
+
+
+        InvokerResponse response = objectMapper.readValue(is, objectMapper.getTypeFactory().constructParametrizedType(InvokerResponse.class, InvokerResponse.class, request.getClass()));
+
+
+        log.info("Response from invoker was {}", response);
+
+        /*response = objectMapper.readValue(is, objectMapper.getTypeFactory().constructParametrizedType(InvokerResponse.class, InvokerResponse.class, request.getClass()));
+
+
+        log.info("Response from invoker was {}", response);
+        response = objectMapper.readValue(is, objectMapper.getTypeFactory().constructParametrizedType(InvokerResponse.class, InvokerResponse.class, request.getClass()));
+
+
+        log.info("Response from invoker was {}", response);
+        response = objectMapper.readValue(is, objectMapper.getTypeFactory().constructParametrizedType(InvokerResponse.class, InvokerResponse.class, request.getClass()));
+
+
+        log.info("Response from invoker was {}", response);
+    */
+
+        Thread.sleep(10000);
+
+
+        clientSocket.close();
+        invoker.stop();
+
+    }
+
+
+    @Test
     public void testRemoteSpeed() throws InterruptedException, IOException {
 
+        // Register the instance we're about to start.
+        ServiceRegistry registry = configurationProvider.getClusterConfig().getServiceRegistry();
+
+        ServiceInstance instance = new ServiceInstance();
+        ImmutableExecutionContext ctx = ImmutableExecutionContext.builder().applicationId("hello-world").functionVersion("1").build();
+        instance.setExecutionContext(ctx);
+        instance.setInstanceId("testRemoteSpeed");
+        instance.setStatus(ServiceInstance.Status.REQUESTED);
+
+        registry.register(instance);
+
         Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>("hello-world", "testRemoteSpeed", new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, HelloWorldFunction.TestResponse.class, configurationProvider);
+        invoker.start();
 
+        int threads = 1;
+        final int loops = 300;
 
-        int threads = 10;
-        final int loops = 1000000;
-
-        final AtomicInteger loopsDone = new AtomicInteger();
+        final AtomicInteger loopsDone = new AtomicInteger(loops);
 
         final long start = System.currentTimeMillis();
 
@@ -136,7 +231,7 @@ public class TestHelloWorld  {
         pool.submit(() -> {
 
            for (int i = loops;i > 0; i--)  {
-               queue.add(new HelloWorldFunction.TestRequest(key, value));
+               queue.add(new HelloWorldFunction.TestRequest(key + " " + i, value));
                loopsDone.decrementAndGet();
            }
 
@@ -150,25 +245,32 @@ public class TestHelloWorld  {
                     OutputStream os = clientSocket.getOutputStream();
 
                     while (true) {
-                        objectMapper.writeValue(os, new InvokerRequest<>(queue.poll(), ImmutableRequestContext.builder().requestId(UUID.randomUUID().toString()).parameters(Collections.emptyMap()).build()));
+
+                        InvokerRequest request = new InvokerRequest<>(queue.take(), ImmutableRequestContext.builder().requestId(UUID.randomUUID().toString()).parameters(Collections.emptyMap()).build());
+                        log.debug("Sending {}", request);
+                        objectMapper.writeValue(os, request);
                         os.flush();
                     }
 
-                } catch (IOException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
 
             });
         }
 
-        while (loopsDone.get() > 0 && !queue.isEmpty()) {
+        while (!queue.isEmpty()) {
             Thread.sleep(200);
             System.out.println(loopsDone + " remain, queue depth " + queue.size());
         }
 
-        long time = start - System.currentTimeMillis();
+        Thread.sleep(20000);
+
+        long time = System.currentTimeMillis() - start;
 
         System.out.println("Processed " + loops + " in " + time + "ms");
+
+        invoker.stop();
 
     }
 

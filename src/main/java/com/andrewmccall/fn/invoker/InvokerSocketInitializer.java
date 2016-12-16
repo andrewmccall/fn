@@ -3,9 +3,11 @@ package com.andrewmccall.fn.invoker;
 import com.andrewmccall.fn.api.Function;
 import com.andrewmccall.fn.invoker.rpc.InvokerRequestDecoder;
 import com.andrewmccall.fn.invoker.rpc.InvokerResponseEncoder;
+import com.andrewmccall.fn.invoker.rpc.JsonMessageDecoder;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.json.JsonObjectDecoder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -36,6 +38,7 @@ public class InvokerSocketInitializer<I, O> extends ChannelInitializer<SocketCha
 
         pipeline.addLast(
                 new InvokerResponseEncoder<>(out),
+                new JsonMessageDecoder(),
                 new InvokerRequestDecoder<>(in),
                 new InvokerRequestHandler<I,O>(function));
 

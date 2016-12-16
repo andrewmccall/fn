@@ -22,7 +22,7 @@ public abstract class ServerLifecycle implements Lifecycle {
     private static final Marker SHUTDOWN = MarkerManager.getMarker("SHUTDOWN");
 
     private transient NioEventLoopGroup acceptorGroup = new NioEventLoopGroup(1);
-    private transient NioEventLoopGroup handlerGroup = new NioEventLoopGroup();
+    private transient NioEventLoopGroup handlerGroup = new NioEventLoopGroup(1);
 
 
     /**

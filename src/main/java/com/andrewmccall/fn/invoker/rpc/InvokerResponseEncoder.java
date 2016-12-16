@@ -37,7 +37,7 @@ public class InvokerResponseEncoder<T> extends MessageToByteEncoder<InvokerRespo
 
     @Override
     protected void encode(ChannelHandlerContext ctx, InvokerResponse<T> msg, ByteBuf out) throws Exception {
-        ByteBufOutputStream os = new ByteBufOutputStream(out);
-        objectMapper.writeValue((DataOutput) os, msg);
+        log.trace("Writing at pos {} of {} value {}", out.writerIndex(), out, msg);
+        out.writeBytes(objectMapper.writeValueAsBytes(msg));
     }
 }
