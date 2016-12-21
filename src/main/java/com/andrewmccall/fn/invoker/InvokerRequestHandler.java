@@ -40,7 +40,7 @@ public class InvokerRequestHandler<I, O>  extends ChannelInboundHandlerAdapter {
 
         log.debug("Got message type: {} value: [{}]", msg);
 
-        super.channelRead(ctx, msg);
+        //super.channelRead(ctx, msg);
         InvokerRequest<I> request = (InvokerRequest<I>) msg;
         InvokerResponse<O> response = execute(request);
         log.debug("Function returned {}", response);

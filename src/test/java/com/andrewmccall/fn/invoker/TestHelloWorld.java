@@ -7,18 +7,25 @@ import com.andrewmccall.fn.config.LocalConfigurationProvider;
 
 import com.andrewmccall.fn.discovery.ServiceInstance;
 import com.andrewmccall.fn.discovery.ServiceRegistry;
+import com.andrewmccall.fn.invoker.rpc.InvokerRequestEncoder;
+import com.andrewmccall.fn.invoker.rpc.InvokerResponseDecoder;
+import com.andrewmccall.fn.invoker.rpc.JsonMessageDecoder;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Collections;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -26,11 +33,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by andrewmccall on 24/10/2016.
  */
-public class TestHelloWorld  {
+public class TestHelloWorld {
 
     private static final Logger log = LogManager.getLogger(TestHelloWorld.class);
 
@@ -216,13 +224,14 @@ public class TestHelloWorld  {
         invoker.start();
 
         int threads = 1;
-        final int loops = 300;
+        final int loops = 1000;
+
+        BitSet responses = new BitSet(loops);
 
         final AtomicInteger loopsDone = new AtomicInteger(loops);
 
         final long start = System.currentTimeMillis();
 
-        String key = "key";
         String value = "world!";
 
         ExecutorService pool = Executors.newFixedThreadPool(threads + 1);
@@ -230,49 +239,103 @@ public class TestHelloWorld  {
         BlockingQueue<HelloWorldFunction.TestRequest> queue = new ArrayBlockingQueue<>(loops);
         pool.submit(() -> {
 
-           for (int i = loops;i > 0; i--)  {
-               queue.add(new HelloWorldFunction.TestRequest(key + " " + i, value));
-               loopsDone.decrementAndGet();
-           }
+            for (int i = loops; i > 0; i--) {
+                queue.add(new HelloWorldFunction.TestRequest("" + i, value));
+                loopsDone.decrementAndGet();
+            }
 
         });
 
-        for (int i = 0; i < threads; i++) {
-            pool.submit(() -> {
 
-                try {
-                    Socket clientSocket = new Socket("localhost", 9999);
-                    OutputStream os = clientSocket.getOutputStream();
+        List<ChannelFuture> channels = new ArrayList<>();
 
-                    while (true) {
+        EventLoopGroup workerGroup = new NioEventLoopGroup(threads);
 
-                        InvokerRequest request = new InvokerRequest<>(queue.take(), ImmutableRequestContext.builder().requestId(UUID.randomUUID().toString()).parameters(Collections.emptyMap()).build());
-                        log.debug("Sending {}", request);
-                        objectMapper.writeValue(os, request);
-                        os.flush();
+        try {
+            Bootstrap b = new Bootstrap(); // (1)
+            b.group(workerGroup); // (2)
+            b.channel(NioSocketChannel.class); // (3)
+            b.option(ChannelOption.SO_KEEPALIVE, true); // (4)
+            b.handler(new ChannelInitializer<SocketChannel>() {
+                @Override
+                public void initChannel(SocketChannel ch) throws Exception {
+                    ch.pipeline().addLast(new InvokerRequestEncoder<>(HelloWorldFunction.TestRequest.class), new JsonMessageDecoder(), new InvokerResponseDecoder<>(HelloWorldFunction.TestResponse.class), new ResponseHandler(responses));
+                }
+            });
+
+            // Start the client.
+            ChannelFuture f = b.connect("localhost", 9999).sync(); // (5)
+
+            channels.add(f);
+
+
+            for (int i = 0; i < threads; i++) {
+                final int p = i;
+                pool.submit(() -> {
+
+
+                    try {
+
+                        while (true) {
+
+                            InvokerRequest request = new InvokerRequest<>(queue.take(), ImmutableRequestContext.builder().requestId(UUID.randomUUID().toString()).parameters(Collections.emptyMap()).build());
+                            log.debug("Sending {}", request);
+
+                            Channel c = channels.get(p).channel();
+                            c.writeAndFlush(request);
+                        }
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
 
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                });
+            }
 
-            });
+            while (!queue.isEmpty()) {
+                Thread.sleep(200);
+                System.out.println(loopsDone + " remain, queue depth " + queue.size());
+            }
+
+            //Thread.sleep(20000);
+
+            long time = System.currentTimeMillis() - start;
+
+            System.out.println("Processed " + loops + " in " + time + "ms");
+
+            if (responses.length() != responses.cardinality()) {
+                responses.flip(0, responses.size());
+                responses.stream().forEach((i) -> log.debug("No response for {}", i));
+            }
+
+            assertEquals(responses.length(), responses.cardinality());
+
+        } finally {
+            workerGroup.shutdownGracefully();
         }
-
-        while (!queue.isEmpty()) {
-            Thread.sleep(200);
-            System.out.println(loopsDone + " remain, queue depth " + queue.size());
-        }
-
-        Thread.sleep(20000);
-
-        long time = System.currentTimeMillis() - start;
-
-        System.out.println("Processed " + loops + " in " + time + "ms");
-
         invoker.stop();
+
+        System.out.println(":::::: SHUTDOWN ::::::");
 
     }
 
+    private static class ResponseHandler extends ChannelInboundHandlerAdapter {
+
+        final BitSet requests;
+
+        public ResponseHandler(BitSet requests) {
+            this.requests = requests;
+        }
+
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            InvokerResponse<HelloWorldFunction.TestResponse> response = (InvokerResponse) msg;
+
+            log.debug("Got response {}", response);
+            int key = Integer.parseInt(response.getPayload().getKey()) -1;
+            if (requests.get(key)) log.warn("Bit already set for key {}!", key);
+            requests.set(key);
+        }
+    }
 
 }

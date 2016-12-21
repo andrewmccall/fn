@@ -45,7 +45,7 @@ public class InvokerResponseDecoder<T> extends ByteToMessageDecoder {
 
         log.trace("{} bytes available", byteBufInputStream.available());
 
-        InvokerRequest<T> r = objectMapper.readValue((InputStream) byteBufInputStream, parameterizedType);
+        InvokerResponse<T> r = objectMapper.readValue((InputStream) byteBufInputStream, parameterizedType);
 
         log.trace("Request {}", r);
 
