@@ -10,6 +10,7 @@ import com.andrewmccall.fn.discovery.ServiceRegistry;
 import com.andrewmccall.fn.invoker.rpc.InvokerRequestEncoder;
 import com.andrewmccall.fn.invoker.rpc.InvokerResponseDecoder;
 import com.andrewmccall.fn.invoker.rpc.JsonMessageDecoder;
+import com.andrewmccall.fn.invoker.rpc.TestRequestCodecs;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,9 +32,11 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Created by andrewmccall on 24/10/2016.
@@ -225,8 +228,8 @@ public class TestHelloWorld {
 
         int threads = 1;
         final int loops = 1000;
+        RequestHandler handler = new RequestHandler(loops);
 
-        BitSet responses = new BitSet(loops);
 
         final AtomicInteger loopsDone = new AtomicInteger(loops);
 
@@ -236,16 +239,10 @@ public class TestHelloWorld {
 
         ExecutorService pool = Executors.newFixedThreadPool(threads + 1);
 
-        BlockingQueue<HelloWorldFunction.TestRequest> queue = new ArrayBlockingQueue<>(loops);
-        pool.submit(() -> {
-
-            for (int i = loops; i > 0; i--) {
-                queue.add(new HelloWorldFunction.TestRequest("" + i, value));
-                loopsDone.decrementAndGet();
-            }
-
-        });
-
+        for (int i = loops; i > 0; i--) {
+            handler.add(new HelloWorldFunction.TestRequest("" + i, value));
+            loopsDone.decrementAndGet();
+        }
 
         List<ChannelFuture> channels = new ArrayList<>();
 
@@ -259,17 +256,18 @@ public class TestHelloWorld {
             b.handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 public void initChannel(SocketChannel ch) throws Exception {
-                    ch.pipeline().addLast(new InvokerRequestEncoder<>(HelloWorldFunction.TestRequest.class), new JsonMessageDecoder(), new InvokerResponseDecoder<>(HelloWorldFunction.TestResponse.class), new ResponseHandler(responses));
+                    ch.pipeline().addLast(new InvokerRequestEncoder<>(HelloWorldFunction.TestRequest.class), new JsonMessageDecoder(), new InvokerResponseDecoder<>(HelloWorldFunction.TestResponse.class), handler.getHander());
                 }
             });
 
-            // Start the client.
-            ChannelFuture f = b.connect("localhost", 9999).sync(); // (5)
-
-            channels.add(f);
 
 
             for (int i = 0; i < threads; i++) {
+                // Start the client.
+                ChannelFuture f = b.connect("localhost", 9999).sync(); // (5)
+
+                channels.add(f);
+
                 final int p = i;
                 pool.submit(() -> {
 
@@ -278,7 +276,7 @@ public class TestHelloWorld {
 
                         while (true) {
 
-                            InvokerRequest request = new InvokerRequest<>(queue.take(), ImmutableRequestContext.builder().requestId(UUID.randomUUID().toString()).parameters(Collections.emptyMap()).build());
+                            InvokerRequest request = new InvokerRequest<>(handler.take(), ImmutableRequestContext.builder().requestId(UUID.randomUUID().toString()).parameters(Collections.emptyMap()).build());
                             log.debug("Sending {}", request);
 
                             Channel c = channels.get(p).channel();
@@ -292,50 +290,121 @@ public class TestHelloWorld {
                 });
             }
 
-            while (!queue.isEmpty()) {
+            int prev = -1;
+            int count = 0;
+
+            while (!handler.allProcessed()) {
                 Thread.sleep(200);
-                System.out.println(loopsDone + " remain, queue depth " + queue.size());
+                System.out.println(loopsDone + " remain, queue depth " + handler.size() + " outstanding: " + handler.outstanding());
+
+                if (prev == handler.outstanding()) {
+                    count++;
+                } else
+                    count = 0;
+                prev= handler.outstanding();
+                if (count == 50) {
+                    log.error("I appear to be stuck...");
+                    break;
+                }
             }
 
             //Thread.sleep(20000);
 
             long time = System.currentTimeMillis() - start;
 
-            System.out.println("Processed " + loops + " in " + time + "ms");
+            log.warn("Processed {} in {} ms", loops , time);
+            if (handler.outstanding() > 0 ) {
+                handler.unprocessed().forEach((i) -> {
+                    log.warn("Failed to process {}", i+1);
+                });
+                fail("Not all messages processed.");
 
-            if (responses.length() != responses.cardinality()) {
-                responses.flip(0, responses.size());
-                responses.stream().forEach((i) -> log.debug("No response for {}", i));
             }
-
-            assertEquals(responses.length(), responses.cardinality());
-
         } finally {
             workerGroup.shutdownGracefully();
+            invoker.stop();
         }
-        invoker.stop();
+
 
         System.out.println(":::::: SHUTDOWN ::::::");
 
     }
 
-    private static class ResponseHandler extends ChannelInboundHandlerAdapter {
 
-        final BitSet requests;
+    private static class RequestHandler {
 
-        public ResponseHandler(BitSet requests) {
-            this.requests = requests;
+        private final int loops;
+
+        private final BitSet requests;
+
+        private final BlockingQueue<HelloWorldFunction.TestRequest> queue;
+
+        public RequestHandler(final int loops) {
+            log.warn("Creating new Handler with {} loops.", loops);
+            this.loops = loops;
+            requests = new BitSet(loops);
+            queue = new ArrayBlockingQueue<>(loops);
+            outstanding();
         }
 
-        @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            InvokerResponse<HelloWorldFunction.TestResponse> response = (InvokerResponse) msg;
-
-            log.debug("Got response {}", response);
-            int key = Integer.parseInt(response.getPayload().getKey()) -1;
-            if (requests.get(key)) log.warn("Bit already set for key {}!", key);
-            requests.set(key);
+        public int getLoops() {
+            return loops;
         }
+
+        public void add(HelloWorldFunction.TestRequest request) {
+            queue.add(request);
+        }
+
+        public HelloWorldFunction.TestRequest take() throws InterruptedException {
+            return queue.take();
+        }
+
+        public int size() {
+            return queue.size();
+        }
+
+        public ChannelInboundHandlerAdapter getHander() {
+            return new ResponseHandler();
+        }
+
+        public boolean allProcessed() {
+
+            if (!queue.isEmpty()) return false;
+            if (requests.length() < loops) return false;
+            return requests.length() == requests.cardinality();
+
+        }
+
+        public int outstanding() {
+
+            if (log.isWarnEnabled()) {
+                log.warn("Length {}, Cardinality {}", requests.length(), requests.cardinality());
+            }
+
+            return loops - requests.cardinality();
+        }
+
+        public IntStream unprocessed() {
+            requests.flip(0, requests.size());
+            return requests.stream();
+        }
+
+
+        private class ResponseHandler extends ChannelInboundHandlerAdapter {
+
+            @Override
+            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                InvokerResponse<HelloWorldFunction.TestResponse> response = (InvokerResponse) msg;
+
+                log.debug("Got response {}", response);
+                int key = Integer.parseInt(response.getPayload().getKey()) - 1;
+                if (requests.get(key)) log.warn("Bit already set for key {}!", key);
+                requests.set(key);
+            }
+        }
+
+
     }
+
 
 }

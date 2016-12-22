@@ -8,6 +8,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.util.CharsetUtil;
+import org.apache.commons.lang3.CharSetUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -41,15 +43,24 @@ public class InvokerResponseDecoder<T> extends ByteToMessageDecoder {
 
         log.trace("Decoding... ");
 
+        int readIdx = in.readerIndex();
+        int writeIdx = in.writerIndex();
+
         ByteBufInputStream byteBufInputStream = new ByteBufInputStream(in);
 
         log.trace("{} bytes available", byteBufInputStream.available());
 
-        InvokerResponse<T> r = objectMapper.readValue((InputStream) byteBufInputStream, parameterizedType);
+        try {
+            InvokerResponse<T> r = objectMapper.readValue((InputStream) byteBufInputStream, parameterizedType);
+            log.trace("Request {}", r);
 
-        log.trace("Request {}", r);
+            out.add(r);
+        } catch (Exception e) {
+            log.warn("Failed to process message.", e);
+            log.debug("Contents: {}", in.toString(CharsetUtil.UTF_8));
+        }
 
-        out.add(r);
+
 
     }
 

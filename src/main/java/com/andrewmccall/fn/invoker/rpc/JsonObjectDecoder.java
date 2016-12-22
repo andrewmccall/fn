@@ -32,6 +32,8 @@ public class JsonObjectDecoder extends ByteToMessageDecoder {
     private final int maxObjectLength;
     private final boolean streamArrayElements;
 
+    private int lastReaderIndex = 0;
+
     public JsonObjectDecoder() {
         // 1 MB
         this(1024 * 1024);
@@ -69,9 +71,16 @@ public class JsonObjectDecoder extends ByteToMessageDecoder {
             return;
         }
 
+        if (this.idx > in.readerIndex() && lastReaderIndex != in.readerIndex()) {
+            log.debug("Last reader current indexes do not match resetting! last:{} current:{}", lastReaderIndex, in.readerIndex());
+            this.idx = in.readerIndex();
+            reset();
+        }
+
         // index of next byte to process.
         int idx = this.idx;
         int wrtIdx = in.writerIndex();
+
 
         if (wrtIdx > maxObjectLength) {
             // buffer size exceeded maxObjectLength; discarding the complete buffer.
@@ -151,6 +160,8 @@ public class JsonObjectDecoder extends ByteToMessageDecoder {
         } else {
             this.idx = idx;
         }
+        this.lastReaderIndex = in.readerIndex();
+
     }
 
     /**
