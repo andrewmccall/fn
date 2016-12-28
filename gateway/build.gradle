@@ -1,0 +1,38 @@
+
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "net.ltgt.gradle:gradle-apt-plugin:0.9"
+    }
+}
+
+apply plugin: 'java'
+apply plugin: "net.ltgt.apt"
+apply plugin: 'idea'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+
+    compile group: 'io.netty', name: 'netty-codec-http', version: '4.1.4.Final'
+    compile group: 'io.netty', name: 'netty-handler', version: '4.1.4.Final'
+
+    apt "org.immutables:value:2.3.7"
+    compileOnly "org.immutables:value:2.3.7"
+
+
+}
+
+test {
+    testLogging {
+        showStandardStreams = true
+    }
+}
+
+

@@ -10,3 +10,4 @@
  */
 
 rootProject.name = 'fn'
+include 'common', 'api', 'invoker', 'discovery', 'config', 'gateway'

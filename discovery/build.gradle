@@ -1,0 +1,30 @@
+
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "net.ltgt.gradle:gradle-apt-plugin:0.9"
+    }
+}
+
+
+apply plugin: 'idea'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+
+    compile group: 'org.apache.curator', name: 'curator-x-discovery', version: '3.2.0'
+
+}
+
+test {
+    testLogging {
+        showStandardStreams = true
+    }
+}
