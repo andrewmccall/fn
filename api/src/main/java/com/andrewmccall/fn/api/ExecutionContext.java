@@ -50,6 +50,4 @@ public interface ExecutionContext extends Serializable {
         return Collections.emptyMap();
     }
 
-    //ExecutorRegistry getExecutionRegistry();
-
 }

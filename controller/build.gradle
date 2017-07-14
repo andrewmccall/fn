@@ -1,0 +1,35 @@
+
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "net.ltgt.gradle:gradle-apt-plugin:0.9"
+    }
+}
+
+
+apply plugin: 'java'
+apply plugin: "net.ltgt.apt"
+apply plugin: 'idea'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+
+    apt "org.immutables:value:2.3.7"
+    compileOnly "org.immutables:value:2.3.7"
+
+}
+
+test {
+    testLogging {
+        showStandardStreams = true
+    }
+}
+
+

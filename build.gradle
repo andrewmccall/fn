@@ -74,4 +74,23 @@ project(':invoker') {
     }
 }
 
+project(':controller') {
+    dependencies {
+        compile project(':common')
+        compile project(':api')
+        compile project(':config')
+        compile project(':discovery')
+    }
+}
+
+project(':cli') {
+    dependencies {
+        compile project(':common')
+        compile project(':api')
+        compile project(':config')
+        compile project(':discovery')
+    }
+}
+
+
 
