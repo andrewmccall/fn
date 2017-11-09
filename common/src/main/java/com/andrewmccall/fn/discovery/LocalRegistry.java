@@ -23,7 +23,7 @@ public class LocalRegistry implements ServiceRegistry {
     @Override
     public void register(ServiceInstance serviceInstance) {
 
-        if (!leaseMap.containsKey(serviceInstance.getExecutionContext().getApplicationId())) {
+        if (!leaseMap.containsKey(serviceInstance.getInstanceId())) {
             leaseMap.put(serviceInstance.getExecutionContext().getApplicationId(), new HashMap<>());
         }
         leaseMap.get(serviceInstance.getExecutionContext().getApplicationId()).put(serviceInstance.getInstanceId(), serviceInstance);

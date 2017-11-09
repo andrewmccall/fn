@@ -37,31 +37,16 @@ subprojects {
     }
 }
 
-project (':api') {
+project (':common') {
     dependencies {
-        project (":common")
-    }
-}
-
-project (':discovery') {
-    dependencies {
-        compile project(':common')
-        compile project (':api')
-    }
-}
-
-project (':config') {
-    dependencies {
-        compile project(':common')
-        compile project(':discovery')
         compile project(':api')
     }
 }
+
 project(':gateway') {
     dependencies {
         compile project(':common')
         compile project(':api')
-        compile project(':config')
         compile project(':invoker')
     }
 }
@@ -70,7 +55,6 @@ project(':invoker') {
     dependencies {
         compile project(':common')
         compile project(':api')
-        compile project(':config')
     }
 }
 
@@ -78,8 +62,6 @@ project(':controller') {
     dependencies {
         compile project(':common')
         compile project(':api')
-        compile project(':config')
-        compile project(':discovery')
     }
 }
 
@@ -87,8 +69,6 @@ project(':cli') {
     dependencies {
         compile project(':common')
         compile project(':api')
-        compile project(':config')
-        compile project(':discovery')
     }
 }
 

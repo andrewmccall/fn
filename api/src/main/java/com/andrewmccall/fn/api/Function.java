@@ -9,6 +9,14 @@ import java.io.Serializable;
  */
 public interface Function<I, O> extends Serializable {
 
+    /**
+     * The method all functions implement, providing an input of type T and the RequestContext the function returns an
+     * output of type O
+     *
+     * @param in the input parameter
+     * @param context the Request context
+     * @return an output value
+     */
     O execute(I in, RequestContext context );
 
 }

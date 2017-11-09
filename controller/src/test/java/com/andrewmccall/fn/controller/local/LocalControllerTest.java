@@ -2,6 +2,7 @@ package com.andrewmccall.fn.controller.local;
 
 import com.andrewmccall.fn.api.ExecutionContext;
 import com.andrewmccall.fn.api.ImmutableExecutionContext;
+import com.andrewmccall.fn.controller.FunctionDescriptor;
 import org.junit.Test;
 
 import java.nio.file.Path;
@@ -22,12 +23,15 @@ public class LocalControllerTest {
         ImmutableLocalFunctionDescriptor.Builder builder = ImmutableLocalFunctionDescriptor.builder();
         builder.executableUrl(executable.normalize().toString());
 
-        ImmutableExecutionContext.Builder ctxBuilder =  ImmutableExecutionContext().builder();
+        ImmutableExecutionContext.Builder ctxBuilder =  ImmutableExecutionContext.builder();
         ctxBuilder.applicationId("TestApplication");
         ctxBuilder.functionVersion("a");
 
         LocalController lc = new LocalController();
-        lc.register(ctx, executable);
+
+        //FunctionDescriptor fd = ImmutableLocalFunctionDescriptor.builder().
+
+        //lc.register(ctx, executable);
 
 
 

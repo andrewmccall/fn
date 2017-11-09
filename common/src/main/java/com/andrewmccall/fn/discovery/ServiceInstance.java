@@ -96,4 +96,22 @@ public class ServiceInstance {
         sb.append('}');
         return sb.toString();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ServiceInstance)) return false;
+
+        ServiceInstance that = (ServiceInstance) o;
+
+        if (!instanceId.equals(that.instanceId)) return false;
+        return executionContext.equals(that.executionContext);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = instanceId.hashCode();
+        result = 31 * result + executionContext.hashCode();
+        return result;
+    }
 }
