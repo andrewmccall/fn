@@ -5,7 +5,7 @@ package com.andrewmccall.fn.discovery.standalone;
  */
 public class GetAll {
 
-    String serviceId;
+    private String serviceId;
 
     public String getServiceId() {
         return serviceId;

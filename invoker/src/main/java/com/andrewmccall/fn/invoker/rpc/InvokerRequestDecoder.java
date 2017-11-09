@@ -15,8 +15,6 @@ import org.apache.logging.log4j.Logger;
 import java.io.InputStream;
 import java.util.List;
 
-import static com.andrewmccall.fn.json.JacksonConfig.getObjectMapper;
-
 /**
  * Created by andrewmccall on 29/11/2016.
  */

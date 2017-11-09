@@ -2,7 +2,6 @@ package com.andrewmccall.fn.controller.local;
 
 import com.andrewmccall.fn.api.ExecutionContext;
 import com.andrewmccall.fn.api.ImmutableExecutionContext;
-import com.andrewmccall.fn.controller.FunctionDescriptor;
 import org.junit.Test;
 
 import java.nio.file.Path;

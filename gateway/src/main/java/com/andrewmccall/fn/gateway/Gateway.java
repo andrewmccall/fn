@@ -1,6 +1,6 @@
 package com.andrewmccall.fn.gateway;
 
-import com.andrewmccall.fn.Lifecycle;
+
 import com.andrewmccall.fn.ServerLifecycle;
 import com.andrewmccall.fn.config.ConfigurationProvider;
 import com.andrewmccall.fn.config.LocalConfigurationProvider;
@@ -12,8 +12,6 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 
 /**
  * The Gateway provides a stateless HTTP conduit to Functions executing on the cluster.
@@ -23,8 +21,6 @@ public class Gateway extends ServerLifecycle {
     static final int PORT = 8080;
 
     private static final Logger log = LogManager.getLogger(Invoker.class.getName());
-    private static final Marker STARTUP = MarkerManager.getMarker("STARTUP");
-    private static final Marker SHUTDOWN = MarkerManager.getMarker("SHUTDOWN");
 
 
     private final ConfigurationProvider configurationProvider;

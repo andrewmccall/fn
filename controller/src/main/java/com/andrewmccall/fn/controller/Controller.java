@@ -2,9 +2,8 @@ package com.andrewmccall.fn.controller;
 
 import com.andrewmccall.fn.api.ExecutionContext;
 
-import java.nio.file.Path;
 import java.util.Collection;
-import java.util.List;
+
 
 /**
  * A Controller runs the cluster, managing the starting and stopping of Functions.

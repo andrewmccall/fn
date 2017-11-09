@@ -22,19 +22,19 @@ public class ServiceInstance {
     /**
      * The key for this ServiceInstance
      */
-    String instanceId;
+    private String instanceId;
 
-    String host;
+    private String host;
 
     int port;
     /**
      * The Date this ServiceInstance was registered.
      */
-    Date registrationDate;
+    private Date registrationDate;
 
-    ExecutionContext executionContext;
+    private ExecutionContext executionContext;
 
-    Status status;
+    private Status status;
 
     public ExecutionContext getExecutionContext() {
         return executionContext;

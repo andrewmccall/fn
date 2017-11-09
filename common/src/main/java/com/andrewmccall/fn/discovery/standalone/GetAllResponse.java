@@ -9,8 +9,8 @@ import java.util.ArrayList;
  */
 public class GetAllResponse implements Response<GetAll> {
 
-    GetAll request;
-    ArrayList<ServiceInstance> instances;
+    private GetAll request;
+    private ArrayList<ServiceInstance> instances;
 
     public GetAllResponse() {
     }

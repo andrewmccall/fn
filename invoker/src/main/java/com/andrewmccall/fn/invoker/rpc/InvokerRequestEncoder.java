@@ -13,8 +13,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.DataOutput;
 
-import static com.andrewmccall.fn.json.JacksonConfig.getObjectMapper;
-
 /**
  * Created by andrewmccall on 29/11/2016.
  */

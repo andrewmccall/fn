@@ -12,4 +12,8 @@ public class AbstractServiceRegistryTest {
         this.registry = registry;
     }
 
+    public void test() {
+        registry.getServiceInstance("something");
+    }
+
 }

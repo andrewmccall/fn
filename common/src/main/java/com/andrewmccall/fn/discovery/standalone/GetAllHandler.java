@@ -1,6 +1,5 @@
 package com.andrewmccall.fn.discovery.standalone;
 
-import com.andrewmccall.fn.discovery.ServiceInstance;
 import com.andrewmccall.fn.discovery.ServiceRegistry;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;

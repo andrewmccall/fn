@@ -1,6 +1,5 @@
 package com.andrewmccall.fn.gateway;
 
-import com.andrewmccall.fn.api.ExecutionContext;
 import com.andrewmccall.fn.api.ImmutableRequestContext;
 import com.andrewmccall.fn.config.ConfigurationProvider;
 import com.andrewmccall.fn.discovery.ServiceInstance;
@@ -17,7 +16,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.json.JsonObject;
-
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -25,7 +23,7 @@ import java.util.Collections;
 import java.util.UUID;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
-import static io.netty.handler.codec.http.HttpVersion.*;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
  * Created by andrewmccall on 09/12/2016.

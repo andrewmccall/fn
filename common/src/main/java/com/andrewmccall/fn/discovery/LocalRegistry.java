@@ -1,8 +1,5 @@
 package com.andrewmccall.fn.discovery;
 
-import com.andrewmccall.fn.discovery.ServiceInstance;
-import com.andrewmccall.fn.discovery.ServiceRegistry;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;

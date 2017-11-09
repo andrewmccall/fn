@@ -6,8 +6,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.concurrent.Future;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 
 /**
  * Provides common Lifecycle management for Server components.
@@ -15,8 +13,6 @@ import org.apache.logging.log4j.MarkerManager;
 public abstract class ServerLifecycle implements Lifecycle {
 
     private static final Logger log = LogManager.getLogger(ServerLifecycle.class.getName());
-    private static final Marker STARTUP = MarkerManager.getMarker("STARTUP");
-    private static final Marker SHUTDOWN = MarkerManager.getMarker("SHUTDOWN");
 
     private transient NioEventLoopGroup acceptorGroup = new NioEventLoopGroup(1);
     private transient NioEventLoopGroup handlerGroup = new NioEventLoopGroup(1);

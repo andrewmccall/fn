@@ -1,7 +1,6 @@
 package com.andrewmccall.fn.controller.local;
 
 import com.andrewmccall.fn.api.ExecutionContext;
-import com.andrewmccall.fn.api.Function;
 import com.andrewmccall.fn.controller.Controller;
 import com.andrewmccall.fn.controller.FunctionDescriptor;
 import org.apache.logging.log4j.LogManager;

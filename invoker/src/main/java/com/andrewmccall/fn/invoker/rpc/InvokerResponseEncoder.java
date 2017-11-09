@@ -10,8 +10,6 @@ import io.netty.handler.codec.MessageToByteEncoder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static com.andrewmccall.fn.json.JacksonConfig.getObjectMapper;
-
 /**
  * Created by andrewmccall on 29/11/2016.
  */

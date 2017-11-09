@@ -8,13 +8,11 @@ import com.andrewmccall.fn.config.LocalConfigurationProvider;
 import com.andrewmccall.fn.discovery.ServiceInstance;
 import com.andrewmccall.fn.discovery.ServiceRegistry;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.concurrent.Future;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 
 import java.net.SocketException;
 import java.util.UUID;
@@ -26,8 +24,6 @@ import java.util.UUID;
 public class Invoker<I, O> extends ServerLifecycle {
 
     private static final Logger log = LogManager.getLogger(Invoker.class.getName());
-    private static final Marker STARTUP = MarkerManager.getMarker("STARTUP");
-    private static final Marker SHUTDOWN = MarkerManager.getMarker("SHUTDOWN");
 
     private static final int PORT = 9999;
 

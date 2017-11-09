@@ -4,7 +4,6 @@ import com.andrewmccall.fn.api.ImmutableExecutionContext;
 import com.andrewmccall.fn.api.ImmutableRequestContext;
 import com.andrewmccall.fn.config.ConfigurationProvider;
 import com.andrewmccall.fn.config.LocalConfigurationProvider;
-
 import com.andrewmccall.fn.discovery.ServiceInstance;
 import com.andrewmccall.fn.discovery.ServiceRegistry;
 import com.andrewmccall.fn.invoker.rpc.InvokerRequestEncoder;
@@ -23,7 +22,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -34,7 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**

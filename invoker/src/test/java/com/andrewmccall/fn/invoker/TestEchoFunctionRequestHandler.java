@@ -6,7 +6,6 @@ import com.andrewmccall.fn.config.LocalConfigurationProvider;
 import org.junit.Test;
 
 import java.util.Collections;
-
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
