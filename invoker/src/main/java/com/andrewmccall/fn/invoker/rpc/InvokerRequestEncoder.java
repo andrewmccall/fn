@@ -18,9 +18,6 @@ import java.io.DataOutput;
  */
 public class InvokerRequestEncoder<T> extends MessageToByteEncoder<InvokerRequest<T>> {
 
-
-    private static final Logger log = LogManager.getLogger(InvokerRequestEncoder.class);
-
     /**
      * Gets the ObjectMapper from the synchronized method when the class is created so we don't enter the synchronized
      * block for every call.

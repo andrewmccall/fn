@@ -10,7 +10,7 @@ import java.util.Map;
  */
 public class LocalRegistry implements ServiceRegistry {
 
-    Map<String, Map<String, ServiceInstance>> leaseMap = new HashMap<>();
+    private Map<String, Map<String, ServiceInstance>> leaseMap = new HashMap<>();
 
     /**
      * Registers or updates a ServiceInstance in this registry.

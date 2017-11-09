@@ -1,6 +1,8 @@
 package com.andrewmccall.fn.cli;
 
 import com.andrewmccall.fn.api.ExecutionContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.imageio.spi.ServiceRegistry;
 import java.nio.file.Path;
@@ -11,6 +13,8 @@ import java.util.List;
  *
  */
 public class Command {
+
+    private static final Logger log = LogManager.getLogger(Command.class);
 
     public ServiceRegistry serviceRegistry;
 
@@ -42,8 +46,8 @@ public class Command {
     }
 
 
-    public void remove (String pplicationId) {
-
+    public void remove (String applicationId) {
+        log.info("Removing application {}", applicationId);
     }
 
 
@@ -59,7 +63,7 @@ public class Command {
         String uri;
     }
 
-    public static class VersionDescriptor {
+    private static class VersionDescriptor {
 
     }
 }

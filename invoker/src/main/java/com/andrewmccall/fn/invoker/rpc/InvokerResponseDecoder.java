@@ -40,9 +40,6 @@ public class InvokerResponseDecoder<T> extends ByteToMessageDecoder {
 
         log.trace("Decoding... ");
 
-        int readIdx = in.readerIndex();
-        int writeIdx = in.writerIndex();
-
         ByteBufInputStream byteBufInputStream = new ByteBufInputStream(in);
 
         log.trace("{} bytes available", byteBufInputStream.available());

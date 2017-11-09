@@ -24,7 +24,7 @@ public class LocalController implements Controller {
     public void register(FunctionDescriptor executable) {
 
         // register the descriptor.
-
+        functions.put(executable.getExecutionContext(), executable);
 
     }
 
@@ -40,7 +40,7 @@ public class LocalController implements Controller {
 
     @Override
     public void remove(ExecutionContext context) {
-
+        functions.remove(context);
     }
 
 

@@ -37,8 +37,6 @@ public class Invoker<I, O> extends ServerLifecycle {
 
     private final ConfigurationProvider configurationProvider;
 
-    private transient ServiceRegistry registry;
-
     public Invoker(String functionId, String instanceId, Function<? super I, ? extends O> function, Class<I> in, Class<O> out, ConfigurationProvider configurationProvider) {
 
         this.functionId = functionId;
@@ -67,7 +65,7 @@ public class Invoker<I, O> extends ServerLifecycle {
 
     public void start() {
 
-        registry = configurationProvider.getClusterConfig().getServiceRegistry();
+        ServiceRegistry registry = configurationProvider.getClusterConfig().getServiceRegistry();
 
         ServiceInstance instance = registry.getServiceInstance(functionId, instanceId);
 

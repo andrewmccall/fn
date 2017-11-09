@@ -6,6 +6,7 @@ import com.andrewmccall.fn.config.ConfigurationProvider;
 import com.andrewmccall.fn.config.LocalConfigurationProvider;
 import com.andrewmccall.fn.invoker.Invoker;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
@@ -18,12 +19,12 @@ import org.apache.logging.log4j.Logger;
  */
 public class Gateway extends ServerLifecycle {
 
-    static final int PORT = 8080;
+    private static final int PORT = 8080;
 
     private static final Logger log = LogManager.getLogger(Invoker.class.getName());
 
 
-    private final ConfigurationProvider configurationProvider;
+    //private final ConfigurationProvider configurationProvider;
 
     Gateway(ConfigurationProvider configurationProvider) {
         this.configurationProvider = configurationProvider;
@@ -42,7 +43,7 @@ public class Gateway extends ServerLifecycle {
             return;
         }
 
-        //Channel ch = f.channel();
+        Channel ch = f.channel();
 
         System.err.println("Open your web browser and navigate to ://127.0.0.1:" + PORT + '/');
 

@@ -16,6 +16,8 @@ import static org.junit.Assert.assertTrue;
  */
 public class ServiceRegistryTest {
 
+    private static int id = 0;
+
     /**
      * This method tests a method that uses random IDs.
      */
@@ -58,8 +60,6 @@ public class ServiceRegistryTest {
         for (int i = 0; i < 10; i++)
             assertTrue(instances.contains(reg.getServiceInstance("anythingelse")));
     }
-
-    private static int id = 0;
 
     private ServiceInstance createTestServiceInstance() throws SocketException {
         ServiceInstance si = new ServiceInstance();

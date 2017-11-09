@@ -26,7 +26,7 @@ public class ServiceInstance {
 
     private String host;
 
-    int port;
+    private int port;
     /**
      * The Date this ServiceInstance was registered.
      */
