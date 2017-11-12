@@ -15,11 +15,11 @@ public interface Lifecycle {
     /**
      * Starts this component
      */
-    void start();
+    default void start() {};
 
     /**
      * Stops this component.
      */
-    void stop();
+    default void stop() {};
 
 }
