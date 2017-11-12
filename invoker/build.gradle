@@ -14,7 +14,6 @@ buildscript {
 apply plugin: 'java'
 apply plugin: "net.ltgt.apt"
 apply plugin: 'idea'
-apply plugin: 'jacoco'
 
 repositories {
     jcenter()
@@ -26,17 +25,4 @@ dependencies {
     compileOnly "org.immutables:value:2.3.7"
 
 
-}
-
-test {
-    testLogging {
-        showStandardStreams = true
-    }
-}
-
-
-jacocoTestReport {
-    reports {
-        xml.enabled = true
-    }
 }

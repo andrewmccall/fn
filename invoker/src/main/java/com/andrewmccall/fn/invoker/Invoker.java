@@ -118,8 +118,6 @@ public class Invoker<I, O> extends ServerLifecycle {
 
     }
 
-    private static Invoker i;
-
     public static void main(String[] args) {
 
         String functionId = UUID.randomUUID().toString();
@@ -127,7 +125,6 @@ public class Invoker<I, O> extends ServerLifecycle {
 
         String functionClassName = args[0];
         String requestClassName = args[1];
-        String responseClassName = args[2];
 
         ConfigurationProvider configurationProvider = new LocalConfigurationProvider();
 
@@ -159,15 +156,7 @@ public class Invoker<I, O> extends ServerLifecycle {
             System.exit(-1);
         }
 
-        Class responseClass = null;
-        try {
-            responseClass = Class.forName(responseClassName);
-        } catch (ClassNotFoundException e) {
-            log.fatal(STARTUP, "Could not find response class {} ", requestClassName);
-            System.exit(-1);
-        }
-
-        i = new Invoker(functionId, instanceId, function, requestClass, configurationProvider);
+        Invoker i = new Invoker(functionId, instanceId, function, requestClass, configurationProvider);
         i.start();
 
         while (true) {
