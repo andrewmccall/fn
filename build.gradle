@@ -12,6 +12,13 @@ buildscript {
 
 apply plugin: 'idea'
 apply plugin: 'java'
+apply plugin: 'jacoco'
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true
+    }
+}
 
 configurations.all {
     exclude group: 'log4j', module: 'log4j'
