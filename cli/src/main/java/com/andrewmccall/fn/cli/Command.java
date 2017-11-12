@@ -56,11 +56,7 @@ public class Command {
      */
     public static class Descriptor {
 
-        String applicationId;
 
-        Collection<VersionDescriptor> versions;
-
-        String uri;
     }
 
     private static class VersionDescriptor {

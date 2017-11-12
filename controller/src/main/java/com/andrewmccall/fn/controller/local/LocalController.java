@@ -23,9 +23,7 @@ public class LocalController implements Controller {
     @Override
     public void register(FunctionDescriptor executable) {
 
-        // register the descriptor.
-        functions.put(executable.getExecutionContext(), executable);
-
+        log.info("Register...");
     }
 
     @Override

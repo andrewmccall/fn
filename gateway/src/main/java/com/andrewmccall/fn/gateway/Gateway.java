@@ -24,7 +24,7 @@ public class Gateway extends ServerLifecycle {
     private static final Logger log = LogManager.getLogger(Invoker.class.getName());
 
 
-    //private final ConfigurationProvider configurationProvider;
+    private final ConfigurationProvider configurationProvider;
 
     Gateway(ConfigurationProvider configurationProvider) {
         this.configurationProvider = configurationProvider;
