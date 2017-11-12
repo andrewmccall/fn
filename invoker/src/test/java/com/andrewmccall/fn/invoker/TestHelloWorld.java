@@ -252,7 +252,7 @@ public class TestHelloWorld {
             b.handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 public void initChannel(SocketChannel ch) throws Exception {
-                    ch.pipeline().addLast(new InvokerRequestEncoder<>(HelloWorldFunction.TestRequest.class), new JsonObjectDecoder(), new InvokerResponseDecoder<>(HelloWorldFunction.TestResponse.class), handler.getHander());
+                    ch.pipeline().addLast(new InvokerRequestEncoder<HelloWorldFunction.TestRequest>(), new JsonObjectDecoder(), new InvokerResponseDecoder<>(HelloWorldFunction.TestResponse.class), handler.getHander());
                 }
             });
 

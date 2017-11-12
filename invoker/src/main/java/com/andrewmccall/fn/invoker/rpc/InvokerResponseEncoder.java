@@ -24,10 +24,7 @@ public class InvokerResponseEncoder<T> extends MessageToByteEncoder<InvokerRespo
      */
     private static final ObjectMapper objectMapper = JacksonConfig.getObjectMapper();
 
-    private JavaType parameterizedType;
-
-    public InvokerResponseEncoder(Class<T> clazz) {
-        parameterizedType = objectMapper.getTypeFactory().constructParametrizedType(InvokerResponse.class, InvokerResponse.class, clazz);
+    public InvokerResponseEncoder() {
     }
 
 

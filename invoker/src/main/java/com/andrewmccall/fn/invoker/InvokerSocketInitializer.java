@@ -36,7 +36,7 @@ public class InvokerSocketInitializer<I, O> extends ChannelInitializer<SocketCha
         ChannelPipeline pipeline = ch.pipeline();
 
         pipeline.addLast(
-                new InvokerResponseEncoder<>(out),
+                new InvokerResponseEncoder<>(),
                 new JsonObjectDecoder(),
                 new InvokerRequestDecoder<>(in),
                 new InvokerRequestHandler<I,O>(function));

@@ -28,31 +28,7 @@ public class TestRequestCodecs {
         InvokerRequest<TestRequest> invokerRequest = new InvokerRequest<>(request, ImmutableRequestContext.builder().requestId(UUID.randomUUID().toString()).parameters(Collections.emptyMap()).build());
 
         ByteBuf buf = new UnpooledByteBufAllocator(false).buffer();
-        InvokerRequestEncoder<TestRequest> encoder = new InvokerRequestEncoder<>(TestRequest.class);
-        encoder.encode(null,invokerRequest, buf);
-
-        InvokerRequestDecoder<TestRequest> decoder = new InvokerRequestDecoder<>(TestRequest.class);
-
-        List<Object> out = new ArrayList<>();
-        decoder.decode(null, buf, out);
-
-        assertFalse(out.isEmpty());
-
-        InvokerRequest<TestRequest> result = (InvokerRequest<TestRequest>) out.get(0);
-
-
-    }
-
-
-    @Test
-    public void testEncodeDecode2() throws Exception {
-
-        TestRequest request = new TestRequest("key", "value");
-
-        InvokerRequest<TestRequest> invokerRequest = new InvokerRequest<>(request, ImmutableRequestContext.builder().requestId(UUID.randomUUID().toString()).parameters(Collections.emptyMap()).build());
-
-        ByteBuf buf = new UnpooledByteBufAllocator(false).buffer();
-        InvokerRequestEncoder<TestRequest> encoder = new InvokerRequestEncoder<>(TestRequest.class);
+        InvokerRequestEncoder<TestRequest> encoder = new InvokerRequestEncoder<>();
         encoder.encode(null,invokerRequest, buf);
 
         InvokerRequestDecoder<TestRequest> decoder = new InvokerRequestDecoder<>(TestRequest.class);
