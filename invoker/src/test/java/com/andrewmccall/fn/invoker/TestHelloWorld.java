@@ -87,7 +87,7 @@ public class TestHelloWorld {
 
         registry.register(instance);
 
-        Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>("hello-world", "testRemoteCall", new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, HelloWorldFunction.TestResponse.class, configurationProvider);
+        Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>("hello-world", "testRemoteCall", new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, configurationProvider);
         invoker.start();
 
         String key = "key";
@@ -138,7 +138,7 @@ public class TestHelloWorld {
 
         registry.register(instance);
 
-        Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>("hello-world", "testRemoteCall", new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, HelloWorldFunction.TestResponse.class, configurationProvider);
+        Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>("hello-world", "testRemoteCall", new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, configurationProvider);
         invoker.start();
 
         String key = "key";
@@ -219,7 +219,7 @@ public class TestHelloWorld {
 
         registry.register(instance);
 
-        Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>("hello-world", "testRemoteSpeed", new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, HelloWorldFunction.TestResponse.class, configurationProvider);
+        Invoker<HelloWorldFunction.TestRequest, HelloWorldFunction.TestResponse> invoker = new Invoker<>("hello-world", "testRemoteSpeed", new HelloWorldFunction(), HelloWorldFunction.TestRequest.class, configurationProvider);
         invoker.start();
 
         int threads = 1;
@@ -230,6 +230,7 @@ public class TestHelloWorld {
         final AtomicInteger loopsDone = new AtomicInteger(loops);
 
         final long start = System.currentTimeMillis();
+        long time;
 
         String value = "world!";
 
@@ -306,20 +307,24 @@ public class TestHelloWorld {
 
             //Thread.sleep(20000);
 
-            long time = System.currentTimeMillis() - start;
 
-            log.warn("Processed {} in {} ms", loops , time);
-            if (handler.outstanding() > 0 ) {
-                handler.unprocessed().forEach((i) -> {
-                    log.warn("Failed to process {}", i+1);
-                });
-                fail("Not all messages processed.");
 
-            }
+
         } finally {
+            time = System.currentTimeMillis() - start;
             workerGroup.shutdownGracefully();
             invoker.stop();
         }
+
+        log.warn("Processed {} in {} ms", loops , time);
+        if (handler.outstanding() > 0 ) {
+            handler.unprocessed().forEach((i) -> {
+                log.warn("Failed to process {}", i+1);
+            });
+            fail("Not all messages processed.");
+
+        }
+        assertEquals("not all messages processed.", 0, handler.outstanding());
 
 
         System.out.println(":::::: SHUTDOWN ::::::");
@@ -366,8 +371,7 @@ public class TestHelloWorld {
         public boolean allProcessed() {
 
             if (!queue.isEmpty()) return false;
-            if (requests.length() < loops) return false;
-            return requests.length() == requests.cardinality();
+            return requests.length() >= loops && requests.length() == requests.cardinality();
 
         }
 

@@ -10,7 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 public class PathParser {
 
 
-    String extractFunctionId(String uri) {
+    public String extractFunctionId(String uri) {
 
         Preconditions.checkNotNull(uri, "Invalid function call without a URI!");
 

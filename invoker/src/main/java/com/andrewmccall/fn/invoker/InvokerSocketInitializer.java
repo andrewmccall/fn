@@ -19,12 +19,10 @@ public class InvokerSocketInitializer<I, O> extends ChannelInitializer<SocketCha
 
     private final Function<? super I, ? extends O> function;
     private final Class<I> in;
-    private final Class<O> out;
 
-    InvokerSocketInitializer(Function<? super I, ? extends O> function, Class<I> in, Class<O> out) {
+    InvokerSocketInitializer(Function<? super I, ? extends O> function, Class<I> in) {
         this.function = function;
         this.in = in;
-        this.out = out;
     }
 
     @Override

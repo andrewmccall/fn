@@ -7,5 +7,5 @@ import java.io.Serializable;
  */
 public interface ConfigurationProvider extends Serializable {
 
-    public ClusterConfig getClusterConfig();
+    ClusterConfig getClusterConfig();
 }

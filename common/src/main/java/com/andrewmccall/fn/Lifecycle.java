@@ -9,17 +9,17 @@ import org.apache.logging.log4j.MarkerManager;
 public interface Lifecycle {
 
 
-    public static final Marker STARTUP = MarkerManager.getMarker("STARTUP");
-    public static final Marker SHUTDOWN = MarkerManager.getMarker("SHUTDOWN");
+    Marker STARTUP = MarkerManager.getMarker("STARTUP");
+    Marker SHUTDOWN = MarkerManager.getMarker("SHUTDOWN");
 
     /**
      * Starts this component
      */
-    public void start();
+    void start();
 
     /**
      * Stops this component.
      */
-    public void stop();
+    void stop();
 
 }

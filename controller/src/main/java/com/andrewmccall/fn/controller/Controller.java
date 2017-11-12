@@ -15,12 +15,12 @@ public interface Controller {
      * @param context The ExecutionContext of the new Function
      * @param executable the path to the executable.
      */
-    public void register(FunctionDescriptor executable) ;
+    void register(FunctionDescriptor executable) ;
 
-    public Collection<String> getFunctions();
+    Collection<String> getFunctions();
 
-    public Collection<FunctionDescriptor> getDescriptors(String applicationId);
+    Collection<FunctionDescriptor> getDescriptors(String applicationId);
 
-    public void remove (ExecutionContext context);
+    void remove(ExecutionContext context);
 
 }

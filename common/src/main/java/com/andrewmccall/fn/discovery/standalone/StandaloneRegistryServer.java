@@ -14,6 +14,9 @@ public class StandaloneRegistryServer extends ServerLifecycle {
 
     private static final LocalRegistry registry = new LocalRegistry();
 
+    /**
+     * Starts the service registry. Unimplemented.
+     */
     @Override
     public void start() {
     }

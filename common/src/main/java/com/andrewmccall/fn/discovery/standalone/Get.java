@@ -33,8 +33,7 @@ public class Get implements Serializable{
 
         Get get = (Get) o;
 
-        if (serviceId != null ? !serviceId.equals(get.serviceId) : get.serviceId != null) return false;
-        return instanceId != null ? instanceId.equals(get.instanceId) : get.instanceId == null;
+        return (serviceId != null ? serviceId.equals(get.serviceId) : get.serviceId == null) && (instanceId != null ? instanceId.equals(get.instanceId) : get.instanceId == null);
     }
 
     @Override

@@ -29,6 +29,7 @@ public class ServiceRegistryTest {
         ServiceRegistry reg = new ServiceRegistry() {
             @Override
             public void register(ServiceInstance serviceInstance) {
+                instances.add(serviceInstance);
             }
 
             @Override

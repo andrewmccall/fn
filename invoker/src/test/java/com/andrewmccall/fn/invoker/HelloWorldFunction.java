@@ -53,8 +53,7 @@ public class HelloWorldFunction implements Function<HelloWorldFunction.TestReque
 
             TestObject that = (TestObject) o;
 
-            if (key != null ? !key.equals(that.key) : that.key != null) return false;
-            return value != null ? value.equals(that.value) : that.value == null;
+            return (key != null ? key.equals(that.key) : that.key == null) && (value != null ? value.equals(that.value) : that.value == null);
 
         }
 

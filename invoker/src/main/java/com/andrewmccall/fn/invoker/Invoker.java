@@ -30,25 +30,23 @@ public class Invoker<I, O> extends ServerLifecycle {
     private final Function<? super I, ? extends O> function;
 
     private final Class<I> in;
-    private final Class<O> out;
 
     private final String functionId;
     private final String instanceId;
 
     private final ConfigurationProvider configurationProvider;
 
-    public Invoker(String functionId, String instanceId, Function<? super I, ? extends O> function, Class<I> in, Class<O> out, ConfigurationProvider configurationProvider) {
+    public Invoker(String functionId, String instanceId, Function<? super I, ? extends O> function, Class<I> in, ConfigurationProvider configurationProvider) {
 
         this.functionId = functionId;
         this.instanceId = instanceId;
 
         this.function = function;
         this.in = in;
-        this.out = out;
 
         this.configurationProvider = configurationProvider;
 
-        log.info(STARTUP, "Created Invoker for function {} with in-class {} and out-class {}", function.getClass().getName(), in.getName(), out.getName());
+        log.info(STARTUP, "Created Invoker for function {} with in-class {} and out-class {}", function.getClass().getName(), in.getName());
 
     }
 
@@ -57,7 +55,7 @@ public class Invoker<I, O> extends ServerLifecycle {
         ServerBootstrap b = new ServerBootstrap();
         b.group(getAcceptorGroup(), getHandlerGroup())
                 .channel(NioServerSocketChannel.class)
-                .childHandler(new InvokerSocketInitializer<>(function, in, out))
+                .childHandler(new InvokerSocketInitializer<>(function, in))
                 .option(ChannelOption.SO_BACKLOG, 120)
                 .childOption(ChannelOption.SO_KEEPALIVE, true);
         return b;
@@ -169,7 +167,7 @@ public class Invoker<I, O> extends ServerLifecycle {
             System.exit(-1);
         }
 
-        i = new Invoker(functionId, instanceId, function, requestClass, responseClass, configurationProvider);
+        i = new Invoker(functionId, instanceId, function, requestClass, configurationProvider);
         i.start();
 
         while (true) {

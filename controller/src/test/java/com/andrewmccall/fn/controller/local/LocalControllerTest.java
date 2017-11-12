@@ -1,6 +1,5 @@
 package com.andrewmccall.fn.controller.local;
 
-import com.andrewmccall.fn.api.ExecutionContext;
 import com.andrewmccall.fn.api.ImmutableExecutionContext;
 import org.junit.Test;
 
@@ -16,7 +15,7 @@ public class LocalControllerTest {
     @Test
     public void testRegister() {
 
-        ExecutionContext ctx = null;
+        //ExecutionContext ctx = null;
         Path executable = Paths.get("");
 
         ImmutableLocalFunctionDescriptor.Builder builder = ImmutableLocalFunctionDescriptor.builder();
@@ -26,7 +25,7 @@ public class LocalControllerTest {
         ctxBuilder.applicationId("TestApplication");
         ctxBuilder.functionVersion("a");
 
-        LocalController lc = new LocalController();
+        //LocalController lc = new LocalController();
 
         //FunctionDescriptor fd = ImmutableLocalFunctionDescriptor.builder().
 

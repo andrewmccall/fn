@@ -21,10 +21,6 @@ public class InvokerRequestEncoder<T> extends MessageToByteEncoder<InvokerReques
      */
     private static final ObjectMapper objectMapper = JacksonConfig.getObjectMapper();
 
-    public InvokerRequestEncoder() {
-    }
-
-
     @Override
     protected void encode(ChannelHandlerContext ctx, InvokerRequest<T> msg, ByteBuf out) throws Exception {
         ByteBufOutputStream os = new ByteBufOutputStream(out);

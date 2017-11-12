@@ -23,10 +23,6 @@ public class InvokerResponseEncoder<T> extends MessageToByteEncoder<InvokerRespo
      */
     private static final ObjectMapper objectMapper = JacksonConfig.getObjectMapper();
 
-    public InvokerResponseEncoder() {
-    }
-
-
     @Override
     protected void encode(ChannelHandlerContext ctx, InvokerResponse<T> msg, ByteBuf out) throws Exception {
         log.trace("Writing at pos {} of {} value {}", out.writerIndex(), out, msg);

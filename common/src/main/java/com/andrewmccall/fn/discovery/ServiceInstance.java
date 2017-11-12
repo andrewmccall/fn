@@ -104,8 +104,7 @@ public class ServiceInstance {
 
         ServiceInstance that = (ServiceInstance) o;
 
-        if (!instanceId.equals(that.instanceId)) return false;
-        return executionContext.equals(that.executionContext);
+        return instanceId.equals(that.instanceId) && executionContext.equals(that.executionContext);
     }
 
     @Override
