@@ -104,6 +104,7 @@ task jacocoRootReport(type: org.gradle.testing.jacoco.tasks.JacocoReport) {
     reports {
         html.enabled = false
         xml.enabled = true
+        xml.destination = "${buildDir}/reports/jacoco/test/jacocoTestReport.xml"
         csv.enabled = false
     }
     onlyIf = {
