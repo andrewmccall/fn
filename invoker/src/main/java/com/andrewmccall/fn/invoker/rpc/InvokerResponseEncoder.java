@@ -2,7 +2,6 @@ package com.andrewmccall.fn.invoker.rpc;
 
 import com.andrewmccall.fn.invoker.InvokerResponse;
 import com.andrewmccall.fn.json.JacksonConfig;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

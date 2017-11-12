@@ -6,7 +6,6 @@ import org.apache.logging.log4j.Logger;
 
 import javax.imageio.spi.ServiceRegistry;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.List;
 
 /**

@@ -2,14 +2,11 @@ package com.andrewmccall.fn.invoker.rpc;
 
 import com.andrewmccall.fn.invoker.InvokerRequest;
 import com.andrewmccall.fn.json.JacksonConfig;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.DataOutput;
 
