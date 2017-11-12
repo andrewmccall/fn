@@ -14,15 +14,11 @@ apply plugin: 'idea'
 apply plugin: 'java'
 apply plugin: 'jacoco'
 
-jacocoTestReport {
-    reports {
-        xml.enabled = true
-    }
-}
 
 configurations.all {
     exclude group: 'log4j', module: 'log4j'
     exclude group: 'org.slf4j'
+
 }
 
 subprojects {
@@ -31,8 +27,6 @@ subprojects {
     version = '1.0.0-SNAPSHOT'
 
     dependencies {
-
-
 
         compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.7'
         compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.7'
