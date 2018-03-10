@@ -2,6 +2,7 @@ package com.andrewmccall.fn.invoker;
 
 import com.andrewmccall.fn.api.Function;
 import com.andrewmccall.fn.api.RequestContext;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -83,8 +84,24 @@ public class HelloWorldFunction implements Function<HelloWorldFunction.TestReque
             this.setKey(key);
             this.setValue(value);
         }
+
+        @Override
+        public String toString() {
+            return new ToStringBuilder(this)
+                    .appendSuper(super.toString())
+                    .toString();
+        }
+
     }
 
-    public static final class TestResponse extends TestObject {}
+    public static final class TestResponse extends TestObject {
+
+        @Override
+        public String toString() {
+            return new ToStringBuilder(this)
+                    .appendSuper(super.toString())
+                    .toString();
+        }
+    }
 
 }

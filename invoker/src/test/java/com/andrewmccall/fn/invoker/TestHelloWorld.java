@@ -113,7 +113,7 @@ public class TestHelloWorld {
         log.trace("Sent request, calling flush.");
         os.flush();
 
-        InvokerResponse response = objectMapper.readValue(is, objectMapper.getTypeFactory().constructParametrizedType(InvokerResponse.class, InvokerResponse.class, request.getClass()));
+        InvokerResponse<HelloWorldFunction.TestResponse> response = objectMapper.readValue(is, objectMapper.getTypeFactory().constructParametrizedType(InvokerResponse.class, InvokerResponse.class, HelloWorldFunction.TestResponse.class));
 
 
         log.info("Response from invoker was {}", response);
@@ -121,6 +121,9 @@ public class TestHelloWorld {
 
         clientSocket.close();
         invoker.stop();
+
+        assertEquals("The keys should match.", request.getKey(), response.getPayload().getKey());
+        assertEquals("Hello " + request.getValue(), response.getPayload().getValue());
 
     }
 
@@ -180,7 +183,7 @@ public class TestHelloWorld {
         os.flush();
 
 
-        InvokerResponse response = objectMapper.readValue(is, objectMapper.getTypeFactory().constructParametrizedType(InvokerResponse.class, InvokerResponse.class, request.getClass()));
+        InvokerResponse<HelloWorldFunction.TestResponse> response = objectMapper.readValue(is, objectMapper.getTypeFactory().constructParametrizedType(InvokerResponse.class, InvokerResponse.class, HelloWorldFunction.TestResponse.class));
 
 
         log.info("Response from invoker was {}", response);
@@ -201,6 +204,9 @@ public class TestHelloWorld {
 
         clientSocket.close();
         invoker.stop();
+
+        assertEquals(request.getKey(), response.getPayload().getKey());
+        assertEquals("Hello " + request.getValue(), response.getPayload().getValue());
 
     }
 
